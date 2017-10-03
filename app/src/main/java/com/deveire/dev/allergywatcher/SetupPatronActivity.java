@@ -12,7 +12,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.deveire.dev.allergywatcher.bleNfc.DeviceManager;
@@ -36,24 +39,20 @@ public class SetupPatronActivity extends AppCompatActivity
 {
 
     private SharedPreferences savedData;
-    private int savedTotal;
-    private ArrayList<String> savedNames;
-    private ArrayList<String> savedDrinks;
-    private ArrayList<String> savedIDs;
-    private ArrayList<Integer> savedDrinksCount;
-    private ArrayList<Float> savedBalance;
+    private int savedTotalNumberOfUsers;
+    private ArrayList<String> savedUsersIDs;
+    private ArrayList<String> savedUserAllergies;
+    private ArrayList<String> currentUserAllergies;
+
 
     private String currentUID;
     private float currentBalance;
 
     private TextView scannedCardUIDText;
-    private TextView patronBalanceText;
-    private TextView patronDrinksCountText;
-    private EditText preferedDrinksEditText;
     private EditText patronNameEditText;
     private Button cancelButton;
     private Button okButton;
-    private Button addBalanceButton;
+    private ArrayList<CheckBox> allergenRadioButtons;
 
 
     //[Tile Reader Variables]
@@ -91,35 +90,44 @@ public class SetupPatronActivity extends AppCompatActivity
 
 
 
-        savedTotal = 0;
-        savedNames = new ArrayList<String>();
-        savedDrinks = new ArrayList<String>();
-        savedIDs = new ArrayList<String>();
-        savedDrinksCount = new ArrayList<Integer>();
-        savedBalance = new ArrayList<Float>();
+        savedTotalNumberOfUsers = 0;
 
-        savedData = this.getApplicationContext().getSharedPreferences("Drinks-On-Me SavedData", Context.MODE_PRIVATE);
-        savedTotal = savedData.getInt("savedTotal", 0);
-        for(int i = 0; i < savedTotal; i++)
+        currentUserAllergies = new ArrayList<String>();
+
+        savedUserAllergies = new ArrayList<String>();
+        savedUsersIDs = new ArrayList<String>();
+
+
+        savedData = this.getApplicationContext().getSharedPreferences("AllergyWatcher SavedData", Context.MODE_PRIVATE);
+        savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
+        for(int i = 0; i < savedTotalNumberOfUsers; i++)
         {
-            savedNames.add(savedData.getString("patronName" + i, "Error"));
-            savedDrinks.add(savedData.getString("patronDrinks" + i, "Error"));
-            savedIDs.add(savedData.getString("patronIDs" + i, "Error"));
-            savedDrinksCount.add(savedData.getInt("patronDrinksCount" + i, 0));
-            savedBalance.add(savedData.getFloat("savedBalance" + i, 0.00f));
+            savedUsersIDs.add(savedData.getString("savedUserID" + i, "Error"));
+            savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
+
         }
 
 
         currentUID = "";
 
         scannedCardUIDText = (TextView) findViewById(R.id.scannedCardIDTextView);
-        patronBalanceText = (TextView) findViewById(R.id.balanceText);
-        patronDrinksCountText = (TextView) findViewById(R.id.drinksCountTextView);
-        preferedDrinksEditText = (EditText) findViewById(R.id.drinkEditText);
         patronNameEditText = (EditText) findViewById(R.id.nameEditText);
         cancelButton = (Button) findViewById(R.id.cancelButton);
         okButton = (Button) findViewById(R.id.okButton);
-        addBalanceButton = (Button) findViewById(R.id.addBalanceButton);
+
+        allergenRadioButtons = new ArrayList<CheckBox>();
+        allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox));
+        allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox2));
+        allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox3));
+        allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox4));
+        allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox5));
+        allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox6));
+        allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox7));
+
+
+
+
+
 
         cancelButton.setOnClickListener(new View.OnClickListener()
         {
@@ -140,20 +148,7 @@ public class SetupPatronActivity extends AppCompatActivity
             }
         });
 
-        addBalanceButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                //if card is registered
-                if(getPatronIndexFromUID(currentUID) != -1)
-                {
-                    currentBalance += 30.0f;
-                    patronBalanceText.setText("Balance: " + currentBalance + "€");
-                    savedBalance.set(getPatronIndexFromUID(currentUID), currentBalance);
-                }
-            }
-        });
+
 
         loadLastUserDetails();
 
@@ -213,20 +208,11 @@ public class SetupPatronActivity extends AppCompatActivity
     {
         super.onStop();
         SharedPreferences.Editor edit = savedData.edit();
-        Log.i("Setup Patron", "Saving savedTotal: " + savedTotal);
-        edit.putInt("savedTotal", savedTotal);
-        for(int i = 0; i < savedTotal; i++)
+        edit.putInt("savedTotal", savedTotalNumberOfUsers);
+        for(int i = 0; i < savedTotalNumberOfUsers; i++)
         {
-            edit.putString("patronName" + i, savedNames.get(i));
-            Log.i("Setup Patron", "Saving savedNames" + i + ": " + savedNames.get(i));
-            edit.putString("patronDrinks" + i, savedDrinks.get(i));
-            Log.i("Setup Patron", "Saving savedDrinks" + i + ": " + savedDrinks.get(i));
-            edit.putString("patronIDs" + i, savedIDs.get(i));
-            Log.i("Setup Patron", "Saving savedIDs" + i + ": " + savedIDs.get(i));
-            edit.putInt("patronDrinksCount" + i, savedDrinksCount.get(i));
-            Log.i("Setup Patron", "Saving savedDrinksCount" + i + ": " + savedDrinksCount.get(i));
-            Log.i("Setup Patron", "Saving savedBalance" + i + ": " + savedBalance.get(i));
-            edit.putFloat("savedBalance" + i, savedBalance.get(i));
+            edit.putString("savedUserID" + i, savedUsersIDs.get(i));
+            edit.putString("savedUserAllergies" + i, savedUserAllergies.get(i));
         }
 
         saveLastUsedDetails(edit);
@@ -244,17 +230,32 @@ public class SetupPatronActivity extends AppCompatActivity
         {
             int i  = 0;
             boolean matchFound = false;
-            for (String aUID: savedIDs)
+            for (String aUID: savedUsersIDs)
             {
                 if(aUID.matches(currentUID))
                 {
                     Log.i("Setup Patron", "Replacing old local patron " + i);
-                    Log.i("Setup Patron", "Old IDs:" + savedIDs.get(i));
-                    savedIDs.set(i, scannedCardUIDText.getText().toString());
-                    Log.i("Setup Patron", "New IDs:" + savedIDs.get(i));
-                    savedNames.set(i, patronNameEditText.getText().toString());
-                    savedDrinks.set(i, preferedDrinksEditText.getText().toString());
-                    savedDrinksCount.set(i, 0);
+                    savedUsersIDs.set(i, scannedCardUIDText.getText().toString());
+
+                    String allergens = "";
+                    for (CheckBox anAllergen: allergenRadioButtons)
+                    {
+                        if(anAllergen.isChecked())
+                        {
+                            if(allergens.matches("")) //if first allergen added to list, do not precede with a comma
+                            {
+                                allergens += anAllergen.getText().toString();
+                            }
+                            else
+                            {
+                                allergens += "," + anAllergen.getText().toString();
+                            }
+                        }
+                    }
+
+
+                    savedUserAllergies.set(i, allergens);
+
 
                     matchFound = true;
                     break;
@@ -265,12 +266,29 @@ public class SetupPatronActivity extends AppCompatActivity
             if(!matchFound)
             {
                 Log.i("Setup Patron", "Creating new local patron");
-                savedTotal++;
-                savedNames.add(patronNameEditText.getText().toString());
-                savedDrinks.add(preferedDrinksEditText.getText().toString());
-                savedIDs.add(scannedCardUIDText.getText().toString());
-                savedDrinksCount.add(0);
-                savedBalance.add(30.0f);
+                savedTotalNumberOfUsers++;
+                //savedNames.add(patronNameEditText.getText().toString());
+                savedUsersIDs.add(scannedCardUIDText.getText().toString());
+
+                String allergens = "";
+                for (CheckBox anAllergen: allergenRadioButtons)
+                {
+                    if(anAllergen.isChecked())
+                    {
+                        if(allergens.matches("")) //if first allergen added to list, do not precede with a comma
+                        {
+                            allergens += anAllergen.getText().toString();
+                        }
+                        else
+                        {
+                            allergens += "," + anAllergen.getText().toString();
+                        }
+                    }
+                }
+
+
+                savedUserAllergies.add(allergens);
+
             }
         }
     }
@@ -279,26 +297,26 @@ public class SetupPatronActivity extends AppCompatActivity
     {
         Log.i("Setup Patron", "Loading User Details");
         patronNameEditText.setText(savedData.getString("lastUsedPatronName", "Error"));
-        preferedDrinksEditText.setText(savedData.getString("lastUsedPatronDrinks", "Error"));
+        //preferedDrinksEditText.setText(savedData.getString("lastUsedPatronDrinks", "Error"));
         scannedCardUIDText.setText(savedData.getString("lastUsedPatronIDs", "Error"));
         currentUID = savedData.getString("lastUsedPatronIDs", "Error");
 
-        patronDrinksCountText.setText("Drinks Consumed: " + savedData.getInt("patronDrinksCount" +getPatronIndexFromUID(scannedCardUIDText.getText().toString()), 0));
-        patronBalanceText.setText("Balance: " + savedData.getFloat("savedBalance" + getPatronIndexFromUID(scannedCardUIDText.getText().toString()), 0.00f) + "€");
-        currentBalance = savedData.getFloat("savedBalance" + getPatronIndexFromUID(scannedCardUIDText.getText().toString()), 0.00f);
+        //patronDrinksCountText.setText("Drinks Consumed: " + savedData.getInt("patronDrinksCount" +getPatronIndexFromUID(scannedCardUIDText.getText().toString()), 0));
+        //patronBalanceText.setText("Balance: " + savedData.getFloat("savedBalance" + getPatronIndexFromUID(scannedCardUIDText.getText().toString()), 0.00f) + "€");
+        //currentBalance = savedData.getFloat("savedBalance" + getPatronIndexFromUID(scannedCardUIDText.getText().toString()), 0.00f);
     }
 
     private void saveLastUsedDetails(SharedPreferences.Editor edit)
     {
         edit.putString("lastUsedPatronName", patronNameEditText.getText().toString());
-        edit.putString("lastUsedPatronDrinks", preferedDrinksEditText.getText().toString());
+        //edit.putString("lastUsedPatronDrinks", preferedDrinksEditText.getText().toString());
         edit.putString("lastUsedPatronIDs", scannedCardUIDText.getText().toString());
     }
 
     private int getPatronIndexFromUID(String inUID)
     {
         int i = 0;
-        for (String aUID: savedIDs)
+        for (String aUID: savedUsersIDs)
         {
             if(inUID.matches(aUID))
             {
@@ -450,19 +468,30 @@ public class SetupPatronActivity extends AppCompatActivity
                         int j = getPatronIndexFromUID(currentUID);
                         if(j != -1)
                         {
-                            patronNameEditText.setText(savedNames.get(j));
-                            preferedDrinksEditText.setText(savedDrinks.get(j));
-                            patronDrinksCountText.setText("Drinks Consumed: " + savedDrinksCount.get(j));
-                            currentBalance = savedData.getFloat("savedBalance" + getPatronIndexFromUID(currentUID), 0.00f);
-                            patronBalanceText.setText("Balance: " + currentBalance + "€");
+                            //patronNameEditText.setText(savedNames.get(j));
+                            //currentBalance = savedData.getFloat("savedBalance" + getPatronIndexFromUID(currentUID), 0.00f);
+                            //patronBalanceText.setText("Balance: " + currentBalance + "€");
+                            for (String anAllergen: savedUserAllergies.get(j).split(","))
+                            {
+                                for (CheckBox aButton: allergenRadioButtons)
+                                {
+                                    if(aButton.getText().toString().matches(anAllergen))
+                                    {
+                                        aButton.setChecked(true);
+                                    }
+                                }
+                            }
                         }
                         else
                         {
                             patronNameEditText.setText("-Enter Name-");
-                            preferedDrinksEditText.setText("-Enter Prefered Beverage-");
-                            patronDrinksCountText.setText("Drinks Consumed: 0");
-                            currentBalance = 0.00f;
-                            patronBalanceText.setText("Balance: " + currentBalance + "€");
+
+                            for (CheckBox aButton: allergenRadioButtons)
+                            {
+
+                                aButton.setChecked(false);
+
+                            }
                         }
                     }
                 });

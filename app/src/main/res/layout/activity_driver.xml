@@ -8,63 +8,79 @@
     android:background="@drawable/party_app_final_background">
 
     <TextView
-        android:id="@+id/mapText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="163dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        android:text="TextView"
-        android:textColor="@color/cast_expanded_controller_text_color"
-        android:visibility="invisible"
-        map:layout_constraintHorizontal_bias="0.0"
-        map:layout_constraintLeft_toLeftOf="parent"
-        map:layout_constraintRight_toRightOf="parent"
-        map:layout_constraintTop_toTopOf="parent"/>
-
-    <TextView
-        android:id="@+id/headerText"
+        android:id="@+id/foodNameText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        android:text="Current Orders"
-        android:textColor="@color/cast_expanded_controller_text_color"
-        android:textSize="24sp"
-        map:layout_constraintBottom_toTopOf="@+id/scrollView"
+        android:text="-Food Item-"
+        android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+        android:textColor="@android:color/white"
+        map:layout_constraintBottom_toBottomOf="parent"
+        map:layout_constraintLeft_toLeftOf="parent"
+        map:layout_constraintRight_toRightOf="parent"/>
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="ALLERGEN ALERT"
+        android:textAppearance="@style/TextAppearance.AppCompat.Display2"
+        android:textColor="@android:color/white"
+        map:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="128dp"
+        android:layout_marginLeft="8dp"
+        map:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginRight="8dp"
+        map:layout_constraintRight_toRightOf="parent"/>
+
+    <TextView
+        android:id="@+id/alertText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="8dp"
+        android:text="ALLERGEN ALERT"
+        android:textColor="@android:color/white"
+        map:layout_constraintBottom_toBottomOf="@+id/foodImage"
         map:layout_constraintHorizontal_bias="0.5"
         map:layout_constraintLeft_toLeftOf="parent"
         map:layout_constraintRight_toRightOf="parent"
-        map:layout_constraintTop_toTopOf="parent"/>
+        map:layout_constraintTop_toBottomOf="@+id/textView3"
+        map:layout_constraintVertical_bias="0.0"/>
 
-    <ScrollView
-        android:id="@+id/scrollView"
+    <ImageView
+        android:id="@+id/foodImage"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="5dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        map:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginTop="0dp"
+        android:scaleType="fitXY"
+        android:visibility="invisible"
+        map:layout_constraintBottom_toTopOf="@+id/foodNameText"
         map:layout_constraintHorizontal_bias="0.0"
         map:layout_constraintLeft_toLeftOf="parent"
         map:layout_constraintRight_toRightOf="parent"
-        android:layout_marginTop="8dp"
-        map:layout_constraintTop_toBottomOf="@+id/mapText">
+        map:layout_constraintTop_toTopOf="parent"
+        map:layout_constraintVertical_bias="1.0"
+        map:srcCompat="@drawable/rabbit_ad"/>
 
-        <TableLayout
-            android:id="@+id/ordersTable"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-        </TableLayout>
-    </ScrollView>
-
+    <Button
+        android:id="@+id/nextFoodButton"
+        android:layout_width="48dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:background="@drawable/rounded_button"
+        android:text=" &lt; &lt;"
+        map:layout_constraintBottom_toBottomOf="@+id/foodImage"
+        map:layout_constraintLeft_toLeftOf="parent"
+        tools:text=" &lt; &lt;"
+        />
 </android.support.constraint.ConstraintLayout>
 

@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -19,9 +20,12 @@ import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewManager;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -36,8 +40,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
+import java.nio.channels.spi.AbstractSelectionKey;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -48,17 +55,17 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 {
 
 
-    private TextView mapText;
+    private TextView alertText;
     //private TextView balanceText;
-    private TableLayout ordersTable;
-    private ImageView adImageView;
+    private TextView foodNameText;
+    private ImageView foodImage;
+    private Button nextFoodButton;
 
 
     final static int PAIR_READER_REQUESTCODE = 9;
 
     private SharedPreferences savedData;
-    private String itemName;
-    private int itemID;
+
 
     private boolean hasState;
 
@@ -67,15 +74,13 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
     private HashMap<String, String> endOfSpeakIndentifier;
 
 
-    private int savedTotal;
-    private ArrayList<String> savedNames;
-    private ArrayList<String> savedDrinks;
-    private ArrayList<String> savedIDs;
-    private ArrayList<Integer> savedDrinksCount;
-    private ArrayList<Float> savedBalance;
+    private int savedTotalNumberOfUsers;
+    private ArrayList<String> savedUsersIDs;
+    private ArrayList<String> savedUserAllergies;
+    private ArrayList<String> currentUserAllergies;
+    private ArrayList<String> currentFoodAllergens;
 
-    private ArrayList<String> currentOrderUIDs;
-    private ArrayList<OrderView> currentOrderViews;
+    private int foodIndex;
 
     //[BLE Variables]
     private String storedScannerAddress;
@@ -93,7 +98,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 
     //[Retreive Alert Data Variables]
     private Boolean pingingServerFor_alertData;
-    private TextView alertDataText;
+    //private TextView alertDataText;
     private String currentUID;
     private String currentStationID;
     //[/Retreive Alert Data Variables]
@@ -182,9 +187,24 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 
 
 
-        mapText = (TextView) findViewById(R.id.mapText);
+        alertText = (TextView) findViewById(R.id.alertText);
+        foodNameText = (TextView) findViewById(R.id.foodNameText);
         //balanceText = (TextView) findViewById(R.id.balanceText);
-        ordersTable = (TableLayout) findViewById(R.id.ordersTable);
+        foodImage = (ImageView) findViewById(R.id.foodImage);
+
+        //foodNameText.setText("Chicken Soup");
+        foodImage.setVisibility(View.VISIBLE);
+        //foodImage.setImageResource(R.drawable.rabbit_ad);
+
+        nextFoodButton = (Button) findViewById(R.id.nextFoodButton);
+        nextFoodButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                cycleFood();
+            }
+        });
 
 
 
@@ -217,30 +237,25 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 
         hasState = true;
 
-        itemID =  0;
+        currentUserAllergies = new ArrayList<String>();
+        currentFoodAllergens = new ArrayList<String>();
+        savedUserAllergies = new ArrayList<String>();
+        savedUsersIDs = new ArrayList<String>();
 
-        savedTotal = 0;
-        savedNames = new ArrayList<String>();
-        savedDrinks = new ArrayList<String>();
-        savedIDs = new ArrayList<String>();
-        savedDrinksCount = new ArrayList<Integer>();
-        savedBalance = new ArrayList<Float>();
+        foodIndex = 1;
+        cycleFood();
 
-        savedData = this.getApplicationContext().getSharedPreferences("Drinks-On-Me SavedData", Context.MODE_PRIVATE);
-        savedTotal = savedData.getInt("savedTotal", 0);
-        for(int i = 0; i < savedTotal; i++)
+        savedData = this.getApplicationContext().getSharedPreferences("AllergyWatcher SavedData", Context.MODE_PRIVATE);
+        savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
+        for(int i = 0; i < savedTotalNumberOfUsers; i++)
         {
-            savedNames.add(savedData.getString("patronName" + i, "Error"));
-            savedDrinks.add(savedData.getString("patronDrinks" + i, "Error"));
-            savedIDs.add(savedData.getString("patronIDs" + i, "Error"));
-            savedDrinksCount.add(savedData.getInt("patronDrinksCount" + i, 0));
-            savedBalance.add(savedData.getFloat("savedBalance" + i, 0.00f));
+            savedUsersIDs.add(savedData.getString("savedUserID" + i, "Error"));
+            savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
+
         }
 
         //balanceText.setText("Balance: " + savedBalance);
 
-        currentOrderViews = new ArrayList<OrderView>();
-        currentOrderUIDs = new ArrayList<String>();
 
         pingingServer = false;
 
@@ -250,7 +265,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 
 
         pingingServerFor_alertData = false;
-        alertDataText = (TextView) findViewById(R.id.mapText);
+        //alertDataText = (TextView) findViewById(R.id.mapText);
 
         toSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -286,8 +301,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                                 @Override
                                 public void run()
                                 {
-                                    adImageView.setVisibility(View.VISIBLE);
-                                    alertDataText.setText("No Instructions.");
+                                    foodImage.setVisibility(View.VISIBLE);
                                 }
                             });
                         }
@@ -344,45 +358,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 
 
 
-        resumeLoadSavedDataConnectionDelayer = new Timer();
-        resumeLoadSavedDataConnectionDelayer.schedule(new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                savedTotal = savedData.getInt("savedTotal", 0);
-                Log.i("Setup Patron", "Loading savedTotal: " + savedTotal);
-                savedNames = new ArrayList<String>();
-                savedDrinks = new ArrayList<String>();
-                savedIDs = new ArrayList<String>();
-                savedDrinksCount = new ArrayList<Integer>();
 
-                for(int i = 0; i < savedTotal; i++)
-                {
-                    savedNames.add(savedData.getString("patronName" + i, "Error"));
-                    Log.i("Setup Patron", "Loading patronName" + i + ": " + savedNames.get(i));
-                    savedDrinks.add(savedData.getString("patronDrinks" + i, "Error"));
-                    Log.i("Setup Patron", "Loading patronDrinks" + i + ": " + savedDrinks.get(i));
-                    savedIDs.add(savedData.getString("patronIDs" + i, "Error"));
-                    Log.i("Setup Patron", "Loading patronIDs" + i + ": " + savedIDs.get(i));
-                    savedDrinksCount.add(savedData.getInt("patronDrinksCount" + i, 0));
-                    Log.i("Setup Patron", "Loading patronDrinksCount" + i + ": " + savedDrinksCount.get(i));
-                    savedBalance.add(savedData.getFloat("savedBalance" + i, 0.00f));
-                    Log.i("Setup Patron", "Loading patronBalance" + i + ": " + savedDrinksCount.get(i));
-                }
-
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        //balanceText.setText("Balance: " + savedBalance);
-                    }
-                });
-
-
-            }
-        }, 1000);
 
         //barReaderTimer = new Timer();
 
@@ -410,8 +386,6 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
         tileReaderTimer.cancel();
         tileReaderTimer.purge();
 
-        resumeLoadSavedDataConnectionDelayer.cancel();
-        resumeLoadSavedDataConnectionDelayer.purge();
 
         //if scanner is connected, disconnect it
         if(deviceManager.isConnection())
@@ -428,14 +402,11 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
         }
 
         SharedPreferences.Editor edit = savedData.edit();
-        edit.putInt("savedTotal", savedTotal);
-        for(int i = 0; i < savedTotal; i++)
+        edit.putInt("savedTotal", savedTotalNumberOfUsers);
+        for(int i = 0; i < savedTotalNumberOfUsers; i++)
         {
-            edit.putString("patronName" + i, savedNames.get(i));
-            edit.putString("patronDrinks" + i, savedDrinks.get(i));
-            edit.putString("patronIDs" + i, savedIDs.get(i));
-            edit.putInt("patronDrinksCount" + i, savedDrinksCount.get(i));
-            edit.putFloat("savedBalance" + i, savedBalance.get(i));
+            edit.putString("savedUserID" + i, savedUsersIDs.get(i));
+            edit.putString("savedUserAllergies" + i, savedUserAllergies.get(i));
         }
 
         edit.commit();
@@ -490,14 +461,11 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
         SharedPreferences.Editor edit = savedData.edit();
 
         //edit.putString("ScannerMacAddress", storedScannerAddress);
-        edit.putInt("savedTotal", savedTotal);
-        for(int i = 0; i < savedTotal; i++)
+        edit.putInt("savedTotal", savedTotalNumberOfUsers);
+        for(int i = 0; i < savedTotalNumberOfUsers; i++)
         {
-            edit.putString("patronName" + i, savedNames.get(i));
-            edit.putString("patronDrinks" + i, savedDrinks.get(i));
-            edit.putString("patronIDs" + i, savedIDs.get(i));
-            edit.putInt("patronDrinksCount" + i, savedDrinksCount.get(i));
-            edit.putFloat("savedBalance" + i, savedBalance.get(i));
+            edit.putString("savedUserID" + i, savedUsersIDs.get(i));
+            edit.putString("savedUserAllergies" + i, savedUserAllergies.get(i));
         }
 
         edit.commit();
@@ -516,182 +484,78 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
         super.onStop();
     }
 
-
-    private void createOrder(String inUID)
+    private void runAllergyCheck(String userUIDin)
     {
-        Log.i("Setup Order", "UID recieved: " + currentUID);
-        //if an Order for this UID exists, delete it, if not, add a new order
-        if(!deleteExisitingOrder(currentUID))
+        Log.i("Allergens", "Running Check on " + userUIDin);
+        boolean userFound = false;
+        int indexOfUser = 0;
+        for (String aUserID: savedUsersIDs)
         {
-            TableRow newRow = new TableRow(getApplicationContext());
-            ordersTable.addView(newRow);
-            OrderView newOrder = new OrderView(getApplicationContext());
-            newOrder = setOrderData(newOrder, currentUID);
-            //when the barman hits the dismiss button, indicating he has served/ignored the order
-            newOrder.setDismissObserver(new OrderDismissObserver()
+            if(aUserID.matches(userUIDin))
             {
-                //Called be OrderView.dismissButton.onClickListener
-                @Override
-                public void callBack(int inNumberOfDrinksOrdered, OrderView callingOrder)
-                {
-                    //Adjust balance and drinks count if sufficent funds in balance to afford the order.
-                    if (inNumberOfDrinksOrdered * 5.00f <= savedBalance.get(getPatronIndexFromUID(callingOrder.getAttachedUID())))
-                    {
-                        addBalance(-5.00f * inNumberOfDrinksOrdered, getPatronIndexFromUID(callingOrder.getAttachedUID()));
-                        addToDrinksCount(callingOrder.getAttachedUID(), inNumberOfDrinksOrdered);
-                    }
-
-                    //Remove the UID from the list of current order UIDs
-                    deleteExisitingOrder(callingOrder.getAttachedUID());
-                }
-            });
-            newOrder.setAddAnotherObserver(new OrderAddAnotherObserver()
-            {
-                @Override
-                public void callBack(int inNumberOfDrinksOrdered, OrderView callingOrder)
-                {
-                    //called by OrderView.addAnotherButton.onClickListner
-                    if (inNumberOfDrinksOrdered * 5.00f > savedBalance.get(getPatronIndexFromUID(callingOrder.getAttachedUID())))
-                    {
-                        callingOrder.setPreferedDrinkText("Insufficent Funds");
-                    }
-                }
-            });
-
-
-
-            currentOrderUIDs.add(currentUID);
-            currentOrderViews.add(newOrder);
-
-            TableRow.LayoutParams params = new TableRow.LayoutParams();
-            params.weight = 1;
-            newOrder.setLayoutParams(params);
-            newRow.addView(newOrder);
-        }
-    }
-
-    private OrderView setOrderData(OrderView anOrder, String inUID)
-    {
-        Log.i("Setup Order", "Setting Order Data: " + currentUID);
-        int i = 0;
-        boolean matchFound = false;
-        for(String aUID: savedIDs)
-        {
-            if(aUID.matches(inUID))
-            {
-                if(savedBalance.get(i) >= 5f)
-                {
-                    anOrder.setOrder(savedNames.get(i), savedDrinks.get(i), savedDrinksCount.get(i), savedBalance.get(i), currentUID);
-                }
-                else
-                {
-                    anOrder.setOrder(savedNames.get(i), "Out of Money", savedDrinksCount.get(i), savedBalance.get(i), currentUID);
-                }
-                matchFound = true;
-            }
-            i++;
-        }
-        //If UID matches no registered user.
-        if(!matchFound)
-        {
-            anOrder.setOrder("Unregistered", "Hasn't Paid", 0, 0, currentUID);
-            anOrder.setPreferedDrinkText("Hasn't Paid"); //manually setting text to "Hasn't Paid" removes the 1 that is attached to that text by default
-        }
-        return anOrder;
-    }
-
-    //called by OrderView's dismissButton onClickListener
-    public void addBalance(float cashToAdd, int i)
-    {
-        savedBalance.set(i, savedBalance.get(i) + cashToAdd);
-        //balanceText.setText("Balance: " + savedBalance);
-    }
-
-    private void addToDrinksCount(String inUID, int inDrinksOrdered)
-    {
-        int i = 0;
-        for (String aUID: savedIDs)
-        {
-            if(inUID.matches(aUID))
-            {
-                savedDrinksCount.set(i, savedDrinksCount.get(i) + inDrinksOrdered);
-                SharedPreferences.Editor edit = savedData.edit();
-                edit.putInt("patronDrinksCount" + i, savedDrinksCount.get(i));
-                edit.putFloat("savedBalance" + i, savedBalance.get(i));
-                edit.commit();
+                Log.i("Allergens", "User Found");
+                userFound = true;
                 break;
             }
-            i++;
+            indexOfUser++;
         }
-    }
 
-    private boolean deleteExisitingOrder(String inUID)
-    {
-        int i = 0;
-        for (String aUID: currentOrderUIDs)
+        if(userFound)
         {
-            Log.i("Setup Order", "Deleting Order, checking for preexisiting order: " + aUID);
-            if(inUID.matches(aUID))
+            currentUserAllergies = new ArrayList<String>(Arrays.asList(savedUserAllergies.get(indexOfUser).split(",")));
+
+            for (String anAllergen : currentFoodAllergens)
             {
-                Log.i("Setup Order", "Deleting Order: " + inUID);
-                ((ViewManager)currentOrderViews.get(i).getParent()).removeView((View) currentOrderViews.get(i));
-                currentOrderViews.remove(i);
-                currentOrderUIDs.remove(i);
-                return true;
+                Log.i("Allergens", "Current Food Allegen: " + anAllergen);
+                for (String bAllergen : currentUserAllergies)
+                {
+                    Log.i("Allergens", "Current User Allegen: " + bAllergen);
+                    if (anAllergen.matches(bAllergen))
+                    {
+                        Log.i("Allergens", "Allergy Match found: " + anAllergen + " : " + bAllergen);
+                        foodImage.setVisibility(View.INVISIBLE);
+                        alertText.setText("This item may contain " + anAllergen + ". Consuming it may cause an Allergic Reaction, please choose another item.");
+                        speakAlert();
+                    }
+                }
             }
-            i++;
         }
-        Log.i("Setup Order", "Not Deleting Order " + inUID + " as order does not already exist");
-        return false;
     }
 
-    private int getPatronIndexFromUID(String inUID)
+    private void speakAlert()
     {
-        int i = 0;
-        for (String aUID: savedIDs)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
-            if(inUID.matches(aUID))
-            {
-                return i;
-            }
-            i++;
+            toSpeech.speak("ALLERGY ALERT!...." + alertText.getText().toString(), TextToSpeech.QUEUE_FLUSH , null, "End");
+            //toSpeech.speak("", TextToSpeech.QUEUE_ADD , null, "End");
         }
-        return -1; //returns -1 if UID not found to match any, stored in shared preferences.
     }
 
-    private int getOrderIndexFromUID(String inUID)
+    private void cycleFood()
     {
-        int i = 0;
-        for (String aUID: currentOrderUIDs)
+        currentFoodAllergens = new ArrayList<String>();
+        switch (foodIndex)
         {
-            if(inUID.matches(aUID))
-            {
-                return i;
-            }
-            i++;
-        }
-        return -1; //returns -1 if UID not found to match any, stored in shared preferences.
-    }
-
-    private void updateSavedDataForUID(String inUID)
-    {
-        int i = 0;
-        for (String aUID : savedIDs)
-        {
-            if (aUID.matches(inUID))
-            {
+            case 1: foodImage.setImageResource(R.drawable.beefburgany);
+                foodNameText.setText("Beef Burgandy");
+                currentFoodAllergens.add("Mushrooms");
                 break;
-            }
-            i++;
+            case 2: foodImage.setImageResource(R.drawable.chicken);
+                foodNameText.setText("Pan Fried Chicken in peanut oil");
+                currentFoodAllergens.add("Peanuts");
+                currentFoodAllergens.add("Celery");
+                currentFoodAllergens.add("Sesame Seeds");
+                break;
+            case 3: foodImage.setImageResource(R.drawable.veggie_burger);
+                foodNameText.setText("Veggie Burger");
+                currentFoodAllergens.add("Eggs");
+                currentFoodAllergens.add("Mushrooms");
+
+                foodIndex = 0;
+                break;
+            default: foodIndex = 0; break;
         }
-        SharedPreferences.Editor edit = savedData.edit();
-        edit.putInt("savedTotal", savedTotal);
-        edit.putString("patronName" + i, savedNames.get(i));
-        edit.putString("patronDrinks" + i, savedDrinks.get(i));
-        edit.putString("patronIDs" + i, savedIDs.get(i));
-        edit.putInt("patronDrinksCount" + i, savedDrinksCount.get(i));
-        edit.putFloat("savedBalance" + i, savedBalance.get(i));
-        edit.commit();
+        foodIndex++;
     }
 
 
@@ -941,11 +805,11 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                     public void run()
                     {
                         Log.i("TileScanner", "callback received: UID = " + outUID.toString());
-                        alertDataText.setText(outUID);
+                        //alertDataText.setText(outUID);
 
                         currentUID = outUID.toString();
                         //retrieveAlerts(currentStationID);
-                        createOrder(outUID.toString());
+                        runAllergyCheck(currentUID);
                     }
                 });
             }
@@ -957,7 +821,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                     public void run()
                     {
                         Log.i("TileScanner", "UID found without a prior failure, assuming its a tag left on the scanner");
-                        alertDataText.setText("UID found without a prior failure, assuming its a tag left on the scanner");
+                        //alertDataText.setText("UID found without a prior failure, assuming its a tag left on the scanner");
                     }
                 });
 
@@ -1561,7 +1425,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                     if (pingingServerFor_alertData)
                     {
                         pingingServerFor_alertData = false;
-                        alertDataText.setText(result);
+                        //alertDataText.setText(result);
                         ArrayList<String> results = new ArrayList<String>();
                         for (int i = 0; i < jsonResultFromServer.length(); i++)
                         {
@@ -1572,7 +1436,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                     }
                     else
                     {
-                        if (itemID == 0 && !result.matches(""))//if app has no assigned id, receive id from servlet.
+                        /*if (itemID == 0 && !result.matches(""))//if app has no assigned id, receive id from servlet.
                         {
                             try
                             {
@@ -1583,7 +1447,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                             {
                                 Log.e("JSON ERROR", "Error retrieving id from servlet with exception: " + e.toString());
                             }
-                        }
+                        }*/
                     }
                 }
                 catch (JSONException e)
@@ -1594,13 +1458,13 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
             }
             else
             {
-                mapText.setText("Error: network unavaiable");
+                //mapText.setText("Error: network unavaiable");
                 Log.e("Network UPDATE", "Error: network unavaiable, error: " + result);
             }
         }
         else
         {
-            mapText.setText("Error: network unavaiable");
+            //mapText.setText("Error: network unavaiable");
             Log.e("Network UPDATE", "Error: network unavaiable");
         }
 
