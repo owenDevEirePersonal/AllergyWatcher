@@ -111,7 +111,7 @@ public class SetupPatronActivity extends AppCompatActivity
         currentUID = "";
 
         scannedCardUIDText = (TextView) findViewById(R.id.scannedCardIDTextView);
-        patronNameEditText = (EditText) findViewById(R.id.nameEditText);
+        //patronNameEditText = (EditText) findViewById(R.id.nameEditText);
         cancelButton = (Button) findViewById(R.id.cancelButton);
         okButton = (Button) findViewById(R.id.okButton);
 
@@ -296,7 +296,7 @@ public class SetupPatronActivity extends AppCompatActivity
     private void loadLastUserDetails()
     {
         Log.i("Setup Patron", "Loading User Details");
-        patronNameEditText.setText(savedData.getString("lastUsedPatronName", "Error"));
+        //patronNameEditText.setText(savedData.getString("lastUsedPatronName", "Error"));
         //preferedDrinksEditText.setText(savedData.getString("lastUsedPatronDrinks", "Error"));
         scannedCardUIDText.setText(savedData.getString("lastUsedPatronIDs", "Error"));
         currentUID = savedData.getString("lastUsedPatronIDs", "Error");
@@ -308,7 +308,7 @@ public class SetupPatronActivity extends AppCompatActivity
 
     private void saveLastUsedDetails(SharedPreferences.Editor edit)
     {
-        edit.putString("lastUsedPatronName", patronNameEditText.getText().toString());
+        //edit.putString("lastUsedPatronName", patronNameEditText.getText().toString());
         //edit.putString("lastUsedPatronDrinks", preferedDrinksEditText.getText().toString());
         edit.putString("lastUsedPatronIDs", scannedCardUIDText.getText().toString());
     }
@@ -484,7 +484,7 @@ public class SetupPatronActivity extends AppCompatActivity
                         }
                         else
                         {
-                            patronNameEditText.setText("-Enter Name-");
+                            //patronNameEditText.setText("-Enter Name-");
 
                             for (CheckBox aButton: allergenRadioButtons)
                             {
