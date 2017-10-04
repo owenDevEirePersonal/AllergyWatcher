@@ -526,7 +526,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
-            toSpeech.speak("ALLERGY ALERT!...." + alertText.getText().toString(), TextToSpeech.QUEUE_FLUSH , null, "End");
+            toSpeech.speak("ALLERGY ALERT!" + alertText.getText().toString(), TextToSpeech.QUEUE_ADD , null, "End");
             //toSpeech.speak("", TextToSpeech.QUEUE_ADD , null, "End");
         }
     }
@@ -809,6 +809,10 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 
                         currentUID = outUID.toString();
                         //retrieveAlerts(currentStationID);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+                        {
+                            toSpeech.speak("Placing Order", TextToSpeech.QUEUE_FLUSH, null, "");
+                        }
                         runAllergyCheck(currentUID);
                     }
                 });
