@@ -11,6 +11,7 @@ public class MainActivity extends Activity
 
     private Button driverButton;
     private Button managerButton;
+    private Button orderButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -21,6 +22,7 @@ public class MainActivity extends Activity
 
         driverButton = (Button) findViewById(R.id.driverButton);
         managerButton = (Button) findViewById(R.id.managerButton);
+        orderButton = (Button) findViewById(R.id.orderButton);
 
         driverButton.setOnClickListener(new View.OnClickListener()
         {
@@ -37,6 +39,15 @@ public class MainActivity extends Activity
             public void onClick(View v)
             {
                 startActivity(new Intent(getApplicationContext(), SetupPatronActivity.class));
+            }
+        });
+
+        orderButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                startActivity(new Intent(getApplicationContext(), OrderFoodActivity.class));
             }
         });
 
