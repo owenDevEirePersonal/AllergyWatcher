@@ -63,8 +63,13 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
     private SharedPreferences savedData;
 
+    private ImageView foodImage;
 
     private boolean hasState;
+
+    private Timer resetImageTimer;
+    private TimerTask resetImageTimerTask;
+
 
     private TextToSpeech toSpeech;
     private String speechInText;
@@ -182,10 +187,17 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         setContentView(R.layout.activity_order_food);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
 
+        foodImage = (ImageView) findViewById(R.id.foodImageView);
 
-
-
-
+        resetImageTimer = new Timer("ResetImageTimer");
+        resetImageTimerTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                foodImage.setImageResource(R.drawable.menu_ad);
+            }
+        };
 
         /*scanKegButton.setOnClickListener(new View.OnClickListener()
         {
@@ -612,6 +624,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     {
                         toSpeech.speak("No Response Detected, aborting order.", TextToSpeech.QUEUE_FLUSH, null, null);
                     }
+                    foodImage.setImageResource(R.drawable.menu_ad);
                     break;
             case SpeechRecognizer.ERROR_NETWORK_TIMEOUT: Log.e("Recog", "NETWORK TIMEOUT ERROR"); break;
             case SpeechRecognizer.ERROR_NETWORK: Log.e("Recog", "TIMEOUT ERROR"); break;
@@ -641,7 +654,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     {
                         Log.i("Recog", "Unrecongised response: " + response);
                         pingingRecogFor = pingingRecogFor_Confirmation;
-                        toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, "Order");
+                        toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, "ConfirmOrder");
                     }
                     else
                     {
@@ -650,17 +663,19 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                         {
                             pingingRecogFor = pingingRecogFor_Nothing;
                             toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
+                            foodImage.setImageResource(R.drawable.menu_ad);
                         }
                         else if(response.matches("No"))
                         {
                             pingingRecogFor = pingingRecogFor_Order;
                             toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, "Order");
+                            foodImage.setImageResource(R.drawable.menu_ad);
                         }
                     }
                     break;
 
                 case pingingRecogFor_Order:
-                    phrases = new String[]{"Veggie Burger", "Beef Burgundy", "Pan Fried Chicken", "what's on the menu"};
+                    phrases = new String[]{"veggie burger", "beef burgundy", "pan fried chicken", "what's on the menu"};
                     response = sortThroughRecognizerResults(matches, phrases);
                     if(response.matches(""))
                     {
@@ -679,6 +694,13 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                         Log.i("Recog", "Order Returned: " + response);
                         pingingRecogFor = pingingRecogFor_Confirmation;
                         toSpeech.speak("You have ordered the " + response + ". Is this correct?", TextToSpeech.QUEUE_FLUSH, null, "ConfirmOrder");
+
+                        switch (response)
+                        {
+                            case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany); break;
+                            case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger); break;
+                            case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken); break;
+                        }
                     }
                     break;
 
