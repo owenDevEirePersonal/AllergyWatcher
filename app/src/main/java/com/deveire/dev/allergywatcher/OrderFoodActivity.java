@@ -22,6 +22,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -46,6 +47,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.Flushable;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,14 +76,22 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     private TextToSpeech toSpeech;
     private String speechInText;
     private HashMap<String, String> endOfSpeakIndentifier;
+    private final String textToSpeechID_Order = "Order";
+    private final String textToSpeechID_Confirmation = "Confirmation";
+    private final String textToSpeechID_Nothing = "Nothing";
+    private final String textToSpeechID_Clarification = "Clarification";
+
 
     private SpeechRecognizer recog;
     private Intent recogIntent;
     private int pingingRecogFor;
+    private int previousPingingRecogFor;
     private final int pingingRecogFor_Order = 1;
     private final int pingingRecogFor_Confirmation = 2;
+    private final int pingingRecogFor_Clarification = 3;
     private final int pingingRecogFor_Nothing = -1;
 
+    private String[] currentPossiblePhrasesNeedingClarification;
 
 
     //[BLE Variables]
@@ -274,8 +284,9 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                             {
                                 switch (idOfUtterance)
                                 {
-                                    case "Order": recog.startListening(recogIntent); break;
-                                    case "ConfirmOrder": recog.startListening(recogIntent); break;
+                                    case textToSpeechID_Order: recog.startListening(recogIntent); break;
+                                    case textToSpeechID_Confirmation: recog.startListening(recogIntent); break;
+                                    case textToSpeechID_Clarification: recog.startListening(recogIntent); break;
                                 }
                             }
                         });
@@ -316,6 +327,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         recogIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getApplicationContext().getPackageName());
         recogIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH);
         recogIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+
+        currentPossiblePhrasesNeedingClarification = new String[]{};
 
 
         Log.i("Scanner Buggery", "orderFoodActivity OnCreate.");
@@ -635,6 +648,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         }
     }
 
+    /* Old onResults Method, does not support user clarification for multiple keywords in 1 response.
     @Override
     public void onResults(Bundle bundle)
     {
@@ -654,7 +668,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     {
                         Log.i("Recog", "Unrecongised response: " + response);
                         pingingRecogFor = pingingRecogFor_Confirmation;
-                        toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, "ConfirmOrder");
+                        toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Confirmation);
                     }
                     else
                     {
@@ -668,7 +682,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                         else if(response.matches("No"))
                         {
                             pingingRecogFor = pingingRecogFor_Order;
-                            toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, "Order");
+                            toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
                             foodImage.setImageResource(R.drawable.menu_ad);
                         }
                     }
@@ -681,19 +695,19 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     {
                         Log.i("Recog", "Unrecongised response: " + response);
                         pingingRecogFor = pingingRecogFor_Order;
-                        toSpeech.speak("I do not recognise: " + matches.get(0) + ". Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, "Order");
+                        toSpeech.speak("I do not recognise: " + matches.get(0) + ". Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
                     }
                     else if(response.matches("what's on the menu"))
                     {
                         Log.i("Recog", "Unrecongised response: " + response);
                         pingingRecogFor = pingingRecogFor_Order;
-                        toSpeech.speak("Today's Menu includes: Beef Burgundy; Pan Fried Chicken; Veggie Burger. Which would you like?", TextToSpeech.QUEUE_FLUSH, null, "Order");
+                        toSpeech.speak("Today's Menu includes: Beef Burgundy; Pan Fried Chicken; Veggie Burger. Which would you like?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
                     }
                     else
                     {
                         Log.i("Recog", "Order Returned: " + response);
                         pingingRecogFor = pingingRecogFor_Confirmation;
-                        toSpeech.speak("You have ordered the " + response + ". Is this correct?", TextToSpeech.QUEUE_FLUSH, null, "ConfirmOrder");
+                        toSpeech.speak("You have ordered the " + response + ". Is this correct?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Confirmation);
 
                         switch (response)
                         {
@@ -704,11 +718,46 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     }
                     break;
 
+                case pingingRecogFor_Clarification:
+                    phrases = currentPossiblePhrasesNeedingClarification;
+                    response = sortThroughRecognizerResults(matches, phrases);
+                    if(response.matches(""))
+                    {
+                        Log.i("Recog", "Unrecongised response: " + response);
+                        pingingRecogFor = pingingRecogFor_Confirmation;
+                        toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Confirmation);
+                    }
+                    else
+                    {
+                        Log.i("Recog", "Confirmation Returned: " + response);
+                        if(response.matches("Yes"))
+                        {
+                            pingingRecogFor = pingingRecogFor_Nothing;
+                            toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
+                            foodImage.setImageResource(R.drawable.menu_ad);
+                        }
+                        else if(response.matches("No"))
+                        {
+                            pingingRecogFor = pingingRecogFor_Order;
+                            toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
+                            foodImage.setImageResource(R.drawable.menu_ad);
+                        }
+                    }
+                    break;
+
                 default:
 
                     break;
             }
         }
+    }*/
+
+    @Override
+    public void onResults(Bundle bundle)
+    {
+        ArrayList<String> matches = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+        recogResultLogic(matches);
+
     }
 
     @Override
@@ -732,8 +781,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
             Log.i("Recog", "Sorting results for result: " + aResult);
             for (String aPhrase: matchablePhrases)
             {
-                Log.i("Recog", "Sorting results for result: " + aResult.replace("-", " ") + " and Phrase: " + aPhrase.toLowerCase());
-                if((aResult.replace("-"," ")).matches(aPhrase.toLowerCase()))
+                Log.i("Recog", "Sorting results for result: " + aResult.toLowerCase().replace("-", " ") + " and Phrase: " + aPhrase.toLowerCase());
+                if((aResult.toLowerCase().replace("-"," ")).contains(aPhrase.toLowerCase()))
                 {
                     Log.i("Recog", "Match Found");
                     return aPhrase;
@@ -744,12 +793,82 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         return "";
     }
 
+
+
+    private void sortThroughRecognizerResultsForAllPossiblities(ArrayList<String> results, String[] matchablePhrases)
+    {
+        ArrayList<String> possibleResults = new ArrayList<String>();
+        for (String aResult: results)
+        {
+            Log.i("Recog", "All Possiblities, Sorting results for result: " + aResult);
+            for (String aPhrase: matchablePhrases)
+            {
+                Boolean isDuplicate = false;
+                Log.i("Recog", "All Possiblities, Sorting results for result: " + aResult.toLowerCase().replace("-", " ") + " and Phrase: " + aPhrase.toLowerCase());
+                for (String b: possibleResults)
+                {
+                    if(b.matches(aPhrase)){isDuplicate = true; break;}
+                }
+
+                if((aResult.toLowerCase().replace("-"," ")).contains(aPhrase.toLowerCase()) && !isDuplicate)
+                {
+                    Log.i("Recog", "All Possiblities, Match Found");
+                    possibleResults.add(aPhrase);
+                }
+            }
+        }
+
+        currentPossiblePhrasesNeedingClarification = possibleResults.toArray(new String[possibleResults.size()]);
+        //if there is more than 1 keyword in the passed phrase, the method will list those keywords back to the user and ask them to repeat  the correct 1.
+        //This in turn will call recogResult from the utterance listener and trigger the pinging for Clarification case where the repeated word will then be used
+        //to resolve the logic of the previous call to recogResult.
+        if(possibleResults.size() > 1)
+        {
+            String clarificationString = "I'm sorry but did you mean.";
+
+            for (String a: possibleResults)
+            {
+                clarificationString += (". " + a);
+                if(!possibleResults.get(possibleResults.size() - 1).matches(a))
+                {
+                    clarificationString += ". or";
+                }
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            {
+                pingingRecogFor = pingingRecogFor_Clarification;
+                toSpeech.speak(clarificationString, TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Clarification);
+            }
+        }
+        //if there is only 1 keyword in the passed phrase, the method skips speech confirmation and immediately calls it's own listener in recogResults,
+        // which(given that there is only 1 possible match, will skip to resolving the previous call to recogResult's logic)
+        else if (possibleResults.size() == 1)
+        {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            {
+                pingingRecogFor = pingingRecogFor_Clarification;
+                recogResultLogic(possibleResults);
+                //toSpeech.speak("h", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Clarification);
+            }
+        }
+        else
+        {
+            Log.i("Recog", "No matches found, Requesting Repetition .");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            {
+                toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Clarification);
+            }
+        }
+    }
+
     private String sortThroughRecognizerResults(ArrayList<String> results, String matchablePhrase)
     {
         for (String aResult: results)
         {
             Log.i("Recog", "Sorting results for result: " + aResult.replace("-", " ") + " and Phrase: " + matchablePhrase.toLowerCase());
-            if((aResult.replace("-", " ")).matches(matchablePhrase.toLowerCase()))
+            if((aResult.replace("-", " ")).contains(matchablePhrase.toLowerCase()))
             {
                 Log.i("Recog", "Match Found");
                 return matchablePhrase;
@@ -757,6 +876,108 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         }
         Log.i("Recog", "No matches found, returning empty string \"\" .");
         return "";
+    }
+
+
+    //CALLED FROM: RecogListener onResults()
+    private void recogResultLogic(ArrayList<String> matches)
+    {
+        String[] phrases;
+        Log.i("Recog", "Results recieved: " + matches);
+        String response = "-Null-";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            Log.i("Recog", "Pinging For: " + pingingRecogFor);
+            switch (pingingRecogFor)
+            {
+                case pingingRecogFor_Clarification:
+
+                    Log.i("Recog", "onResult for Clarification");
+                    phrases = currentPossiblePhrasesNeedingClarification;
+                    response = sortThroughRecognizerResults(matches, phrases);
+                    Log.i("Recog", "onClarification: Response= " + response);
+                    if(response.matches(""))
+                    {
+                        Log.i("Recog", "Unrecongised response: " + response);
+                        pingingRecogFor = pingingRecogFor_Clarification;
+                        ArrayList<String> copyOfCurrentPossiblePhrases = new ArrayList<String>(Arrays.asList(currentPossiblePhrasesNeedingClarification));
+                        sortThroughRecognizerResultsForAllPossiblities(copyOfCurrentPossiblePhrases, phrases);
+                    }
+                    else
+                    {
+                        Log.i("Recog", "Clarification Returned: " + response);
+                        switch (previousPingingRecogFor)
+                        {
+                            case pingingRecogFor_Order:
+                                if(response.matches(""))
+                                {
+                                    Log.i("Recog", "Unrecongised response: " + response);
+                                    pingingRecogFor = pingingRecogFor_Order;
+                                    toSpeech.speak("I do not recognise: " + matches.get(0) + ". Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
+                                }
+                                else if(response.matches("what's on the menu"))
+                                {
+                                    Log.i("Recog", "Unrecongised response: " + response);
+                                    pingingRecogFor = pingingRecogFor_Order;
+                                    toSpeech.speak("Today's Menu includes: Beef Burgundy; Pan Fried Chicken; Veggie Burger. Which would you like?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
+                                }
+                                else
+                                {
+                                    Log.i("Recog", "Order Returned: " + response);
+                                    pingingRecogFor = pingingRecogFor_Confirmation;
+                                    toSpeech.speak("You have ordered the " + response + ". Is this correct?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Confirmation);
+
+                                    switch (response)
+                                    {
+                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany); break;
+                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger); break;
+                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken); break;
+                                    }
+                                }
+                                break;
+
+                            case pingingRecogFor_Confirmation:
+                                if(response.matches(""))
+                                {
+                                    Log.i("Recog", "Unrecongised response: " + response);
+                                    pingingRecogFor = pingingRecogFor_Confirmation;
+                                    toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Confirmation);
+                                }
+                                else
+                                {
+                                    Log.i("Recog", "Confirmation Returned: " + response);
+                                    if(response.matches("Yes"))
+                                    {
+                                        pingingRecogFor = pingingRecogFor_Nothing;
+                                        toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
+                                        foodImage.setImageResource(R.drawable.menu_ad);
+                                    }
+                                    else if(response.matches("No"))
+                                    {
+                                        pingingRecogFor = pingingRecogFor_Order;
+                                        toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
+                                        foodImage.setImageResource(R.drawable.menu_ad);
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    break;
+
+                case pingingRecogFor_Order:
+                    previousPingingRecogFor = pingingRecogFor_Order;
+                    phrases = new String[]{"veggie burger", "beef burgundy", "pan fried chicken", "what's on the menu"};
+                    sortThroughRecognizerResultsForAllPossiblities(matches, phrases);
+                    break;
+
+                case pingingRecogFor_Confirmation:
+                    previousPingingRecogFor = pingingRecogFor_Confirmation;
+                    phrases = new String[]{"Yes", "No"};
+                    sortThroughRecognizerResultsForAllPossiblities(matches, phrases);
+                    break;
+            }
+        }
     }
 //++++++++[/Recognition Other Code]
 
@@ -902,7 +1123,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
                         {
                             pingingRecogFor = pingingRecogFor_Order;
-                            toSpeech.speak("What food do you wish to order?", TextToSpeech.QUEUE_FLUSH, null, "Order");
+                            toSpeech.speak("What food do you wish to order?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
                         }
 
                     }
