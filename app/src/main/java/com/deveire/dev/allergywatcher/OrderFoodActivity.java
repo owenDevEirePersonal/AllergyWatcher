@@ -403,6 +403,10 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
         edit.commit();
 
+        recog.stopListening();
+        recog.cancel();
+        recog.destroy();
+
 
         //headsetTimer.cancel();
         //headsetTimer.purge();

@@ -271,7 +271,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
             @Override
             public void onInit(int status)
             {
-                Log.i("Text To Speech Update", "onInit Complete");
+                Log.i("TextToSpeechUpdate", "onInit Complete");
                 toSpeech.setLanguage(Locale.ENGLISH);
                 endOfSpeakIndentifier = new HashMap();
                 endOfSpeakIndentifier.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "endOfSpeech");
@@ -280,13 +280,13 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                     @Override
                     public void onStart(String utteranceId)
                     {
-                        Log.i("Text To Speech Update", "onStart called");
+                        Log.i("TextToSpeechUpdate", "onStart called");
                     }
 
                     @Override
                     public void onDone(String utteranceId)
                     {
-                        Log.i("Speech", utteranceId + " DONE!");
+                        Log.i("TextToSpeechUpdate", utteranceId + " DONE!");
                         if(utteranceId.matches("End"))
                         {
                             try
@@ -311,7 +311,7 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                     @Override
                     public void onError(String utteranceId)
                     {
-                        Log.i("Text To Speech Update", "ERROR DETECTED");
+                        Log.i("TextToSpeechUpdate", "ERROR DETECTED");
                     }
                 });
             }
@@ -537,17 +537,17 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
         switch (foodIndex)
         {
             case 1: foodImage.setImageResource(R.drawable.beefburgany);
-                foodNameText.setText("Beef Burgandy");
+                foodNameText.setText("Meal 1");
                 currentFoodAllergens.add("Mushrooms");
                 break;
             case 2: foodImage.setImageResource(R.drawable.chicken);
-                foodNameText.setText("Pan Fried Chicken in peanut oil");
+                foodNameText.setText("Meal 2");
                 currentFoodAllergens.add("Peanuts");
                 currentFoodAllergens.add("Celery");
                 currentFoodAllergens.add("Sesame Seeds");
                 break;
             case 3: foodImage.setImageResource(R.drawable.veggie_burger);
-                foodNameText.setText("Veggie Burger");
+                foodNameText.setText("Meal 3");
                 currentFoodAllergens.add("Eggs");
                 currentFoodAllergens.add("Mushrooms");
 
