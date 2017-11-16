@@ -8,6 +8,37 @@
     android:background="@drawable/party_app_final_background"
     tools:context="com.deveire.dev.allergywatcher.OrderFoodActivity">
 
+    <TextView
+        android:id="@+id/alertBigText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="ALLERGEN ALERT"
+        android:textAppearance="@style/TextAppearance.AppCompat.Display2"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="24dp"
+        app:layout_constraintBottom_toBottomOf="@+id/foodImageView"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintVertical_bias="0.16"
+        android:layout_marginLeft="8dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginRight="8dp"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <TextView
+        android:id="@+id/alertText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="0dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginTop="22dp"
+        android:text="ALLERGEN ALERT"
+        android:textColor="@android:color/white"
+        app:layout_constraintLeft_toLeftOf="@+id/alertBigText"
+        app:layout_constraintRight_toRightOf="@+id/alertBigText"
+        app:layout_constraintTop_toBottomOf="@+id/alertBigText"
+        app:layout_constraintHorizontal_bias="1.0"/>
+
     <ImageView
         android:id="@+id/foodImageView"
         android:layout_width="0dp"
