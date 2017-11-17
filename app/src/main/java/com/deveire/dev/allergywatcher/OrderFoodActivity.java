@@ -22,12 +22,10 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
-import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -46,8 +44,6 @@ import com.deveire.dev.allergywatcher.bleNfc.card.SZTCard;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import java.io.Flushable;
-import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,8 +72,11 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     private int savedTotalNumberOfUsers;
     private ArrayList<String> savedUsersIDs;
     private ArrayList<String> savedUserAllergies;
+    private ArrayList<Integer> savedUserMaxSalt;
+    private ArrayList<Integer> savedUserCurrentSalt;
 
     private String[] currentOrderedFoodAllergies;
+    private int currentOrderedFoodSalt;
 
 
     private TextToSpeech toSpeech;
@@ -248,19 +247,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         hasState = true;
 
 
-
-        savedData = this.getApplicationContext().getSharedPreferences("AllergyWatcher SavedData", Context.MODE_PRIVATE);
-
-        savedUserAllergies = new ArrayList<String>();
-        savedUsersIDs = new ArrayList<String>();
-        savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
-
-        for(int i = 0; i < savedTotalNumberOfUsers; i++)
-        {
-            savedUsersIDs.add(savedData.getString("savedUserID" + i, "Error"));
-            savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
-
-        }
+        loadSavedUserData();
 
         //balanceText.setText("Balance: " + savedBalance);
 
@@ -505,8 +492,27 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         super.onStop();
     }
 
+    private void loadSavedUserData()
+    {
+        savedData = this.getApplicationContext().getSharedPreferences("AllergyWatcher SavedData", Context.MODE_PRIVATE);
+
+        savedUserAllergies = new ArrayList<String>();
+        savedUsersIDs = new ArrayList<String>();
+        savedUserMaxSalt = new ArrayList<Integer>();
+        savedUserCurrentSalt = new ArrayList<Integer>();
+        savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
+
+        for(int i = 0; i < savedTotalNumberOfUsers; i++)
+        {
+            savedUsersIDs.add(savedData.getString("savedUserID" + i, "Error"));
+            savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
+            savedUserMaxSalt.add(savedData.getInt("savedUserMaxSalt" + i, 0));
+            savedUserCurrentSalt.add(savedData.getInt("savedUserCurrentSalt" + i, 0));
+        }
+    }
+
     //returns true if no allerigies found
-    private boolean runAllergyCheck(String userUIDin, String[] currentFoodAllergens)
+    private boolean runAllergyAndSaltCheck(String userUIDin, String[] currentFoodAllergens, int currentFoodSalt)
     {
         Log.i("Allergens", "Running Check on " + userUIDin);
         boolean userFound = false;
@@ -542,6 +548,15 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     }
                 }
             }
+
+            if(currentFoodSalt + savedUserCurrentSalt.get(indexOfUser) > savedUserMaxSalt.get(indexOfUser))
+            {
+                Log.i("Allergens", "Excessive Salt: " + currentFoodSalt + " : " + currentFoodSalt + savedUserCurrentSalt.get(indexOfUser) + " :of: " + savedUserMaxSalt.get(indexOfUser));
+                foodImage.setVisibility(View.INVISIBLE);
+                alertText.setText("Warning: This food contains more salt than your diet's salt budget will allow. Please order something else.");
+                speakDietAlert();
+                return false;
+            }
         }
         return true;
     }
@@ -551,6 +566,15 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
             toSpeech.speak("ALLERGY ALERT!" + alertText.getText().toString(), TextToSpeech.QUEUE_ADD , null, textToSpeechID_Allergy);
+            //toSpeech.speak("", TextToSpeech.QUEUE_ADD , null, "End");
+        }
+    }
+
+    private void speakDietAlert()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            toSpeech.speak("Diet Alert!" + alertText.getText().toString(), TextToSpeech.QUEUE_ADD , null, textToSpeechID_Allergy);
             //toSpeech.speak("", TextToSpeech.QUEUE_ADD , null, "End");
         }
     }
@@ -1014,9 +1038,9 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
                                     switch (response)
                                     {
-                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; break;
-                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; break;
-                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; break;
+                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; break;
+                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; break;
+                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; break;
                                     }
                                 }
                                 break;
@@ -1035,8 +1059,19 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     {
                                         pingingRecogFor = pingingRecogFor_Nothing;
                                         //returns true if no allergies
-                                        if(runAllergyCheck(currentUID, currentOrderedFoodAllergies))
+                                        if(runAllergyAndSaltCheck(currentUID, currentOrderedFoodAllergies, currentOrderedFoodSalt))
                                         {
+                                            int indexOfUser = 0;
+                                            for (String aUserID: savedUsersIDs)
+                                            {
+                                                if(aUserID.matches(currentUID))
+                                                {
+                                                    savedUserCurrentSalt.set(indexOfUser, currentOrderedFoodSalt + savedUserCurrentSalt.get(indexOfUser));
+                                                    break;
+                                                }
+                                                indexOfUser++;
+                                            }
+
                                             toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
                                         }
 
@@ -1945,3 +1980,12 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 //**********[/Location Update and server pinging Code]
 
 }
+
+
+
+
+/*
+
+
+
+ */

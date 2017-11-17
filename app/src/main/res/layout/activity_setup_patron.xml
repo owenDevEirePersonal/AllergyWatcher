@@ -47,16 +47,28 @@
         android:layout_marginTop="16dp"/>
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="32dp"
-        android:text="-Select Allergens-"
+        android:text="Maximum Salt (in grams)"
         android:textColor="@color/cast_expanded_controller_text_color"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/idTextView"/>
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="-Select Allergens-"
+        android:textColor="@color/cast_expanded_controller_text_color"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/saltEditText"/>
 
     <TextView
         android:id="@+id/scannedCardIDTextView"
@@ -150,5 +162,22 @@
 
         </LinearLayout>
     </ScrollView>
+
+    <EditText
+        android:id="@+id/saltEditText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="16dp"
+        android:defaultFocusHighlightEnabled="false"
+        android:ems="10"
+        android:inputType="number"
+        android:selectAllOnFocus="false"
+        android:textColor="@android:color/white"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintLeft_toRightOf="@+id/textView2"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/idTextView"/>
 
 </android.support.constraint.ConstraintLayout>

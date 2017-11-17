@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -42,7 +43,10 @@ public class SetupPatronActivity extends AppCompatActivity
     private int savedTotalNumberOfUsers;
     private ArrayList<String> savedUsersIDs;
     private ArrayList<String> savedUserAllergies;
+    private ArrayList<Integer> savedUserMaxSalt;
+    private ArrayList<Integer> savedUserCurrentSalt;
     private ArrayList<String> currentUserAllergies;
+
 
 
     private String currentUID;
@@ -50,6 +54,7 @@ public class SetupPatronActivity extends AppCompatActivity
 
     private TextView scannedCardUIDText;
     private EditText patronNameEditText;
+    private EditText patronMaxSaltEditText;
     private Button cancelButton;
     private Button okButton;
     private ArrayList<CheckBox> allergenRadioButtons;
@@ -94,24 +99,15 @@ public class SetupPatronActivity extends AppCompatActivity
 
         currentUserAllergies = new ArrayList<String>();
 
-        savedUserAllergies = new ArrayList<String>();
-        savedUsersIDs = new ArrayList<String>();
 
-
-        savedData = this.getApplicationContext().getSharedPreferences("AllergyWatcher SavedData", Context.MODE_PRIVATE);
-        savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
-        for(int i = 0; i < savedTotalNumberOfUsers; i++)
-        {
-            savedUsersIDs.add(savedData.getString("savedUserID" + i, "Error"));
-            savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
-
-        }
+        loadSavedUserData();
 
 
         currentUID = "";
 
         scannedCardUIDText = (TextView) findViewById(R.id.scannedCardIDTextView);
         //patronNameEditText = (EditText) findViewById(R.id.nameEditText);
+        patronMaxSaltEditText = (EditText) findViewById(R.id.saltEditText);
         cancelButton = (Button) findViewById(R.id.cancelButton);
         okButton = (Button) findViewById(R.id.okButton);
 
@@ -206,6 +202,7 @@ public class SetupPatronActivity extends AppCompatActivity
 
     protected void onStop()
     {
+        Log.i("State", "SetupPatronActivity On Stop");
         super.onStop();
         SharedPreferences.Editor edit = savedData.edit();
         edit.putInt("savedTotal", savedTotalNumberOfUsers);
@@ -213,6 +210,9 @@ public class SetupPatronActivity extends AppCompatActivity
         {
             edit.putString("savedUserID" + i, savedUsersIDs.get(i));
             edit.putString("savedUserAllergies" + i, savedUserAllergies.get(i));
+            edit.putInt("savedUserMaxSalt" + i, savedUserMaxSalt.get(i));
+            Log.i("Salt", "Salt for " + i + ": " + savedUserMaxSalt.get(i));
+            edit.putInt("savedUserCurrentSalt" + i, savedUserCurrentSalt.get(i));
         }
 
         saveLastUsedDetails(edit);
@@ -222,7 +222,24 @@ public class SetupPatronActivity extends AppCompatActivity
         Log.i("Scanner Buggery", "SetupPatron OnStop");
     }
 
+    private void loadSavedUserData()
+    {
+        savedData = this.getApplicationContext().getSharedPreferences("AllergyWatcher SavedData", Context.MODE_PRIVATE);
 
+        savedUserAllergies = new ArrayList<String>();
+        savedUsersIDs = new ArrayList<String>();
+        savedUserMaxSalt = new ArrayList<Integer>();
+        savedUserCurrentSalt = new ArrayList<Integer>();
+        savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
+
+        for(int i = 0; i < savedTotalNumberOfUsers; i++)
+        {
+            savedUsersIDs.add(savedData.getString("savedUserID" + i, "Error"));
+            savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
+            savedUserMaxSalt.add(savedData.getInt("savedUserMaxSalt" + i, 0));
+            savedUserCurrentSalt.add(savedData.getInt("savedUserCurrentSalt" + i, 0));
+        }
+    }
 
     private void addPatron()
     {
@@ -230,6 +247,7 @@ public class SetupPatronActivity extends AppCompatActivity
         {
             int i  = 0;
             boolean matchFound = false;
+            //if user already exists
             for (String aUID: savedUsersIDs)
             {
                 if(aUID.matches(currentUID))
@@ -255,6 +273,9 @@ public class SetupPatronActivity extends AppCompatActivity
 
 
                     savedUserAllergies.set(i, allergens);
+                    savedUserMaxSalt.set(i, Integer.parseInt(patronMaxSaltEditText.getText().toString()));
+                    Log.i("Salt", "Saving Salt: " + patronMaxSaltEditText.getText().toString() + " : " + i + " : " + Integer.parseInt(patronMaxSaltEditText.getText().toString()));
+                    savedUserCurrentSalt.set(i, 0);
 
 
                     matchFound = true;
@@ -288,6 +309,9 @@ public class SetupPatronActivity extends AppCompatActivity
 
 
                 savedUserAllergies.add(allergens);
+                savedUserMaxSalt.add(Integer.parseInt(patronMaxSaltEditText.getText().toString()));
+                Log.i("Salt", "Adding Salt: " + patronMaxSaltEditText.getText().toString() + " : " + Integer.parseInt(patronMaxSaltEditText.getText().toString()));
+                savedUserCurrentSalt.add(0);
 
             }
         }
@@ -299,6 +323,7 @@ public class SetupPatronActivity extends AppCompatActivity
         //patronNameEditText.setText(savedData.getString("lastUsedPatronName", "Error"));
         //preferedDrinksEditText.setText(savedData.getString("lastUsedPatronDrinks", "Error"));
         scannedCardUIDText.setText(savedData.getString("lastUsedPatronIDs", "Error"));
+        patronMaxSaltEditText.setText("" + savedData.getInt("lastUsedPatronSalt", 0));
         currentUID = savedData.getString("lastUsedPatronIDs", "Error");
 
         //patronDrinksCountText.setText("Drinks Consumed: " + savedData.getInt("patronDrinksCount" +getPatronIndexFromUID(scannedCardUIDText.getText().toString()), 0));
@@ -311,6 +336,7 @@ public class SetupPatronActivity extends AppCompatActivity
         //edit.putString("lastUsedPatronName", patronNameEditText.getText().toString());
         //edit.putString("lastUsedPatronDrinks", preferedDrinksEditText.getText().toString());
         edit.putString("lastUsedPatronIDs", scannedCardUIDText.getText().toString());
+        edit.putInt("lastUsedPatronSalt", Integer.parseInt(patronMaxSaltEditText.getText().toString()));
     }
 
     private int getPatronIndexFromUID(String inUID)
@@ -481,6 +507,7 @@ public class SetupPatronActivity extends AppCompatActivity
                                     }
                                 }
                             }
+                            patronMaxSaltEditText.setText("" + savedUserMaxSalt.get(j));
                         }
                         else
                         {
@@ -488,9 +515,7 @@ public class SetupPatronActivity extends AppCompatActivity
 
                             for (CheckBox aButton: allergenRadioButtons)
                             {
-
                                 aButton.setChecked(false);
-
                             }
                         }
                     }
