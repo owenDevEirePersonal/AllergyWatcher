@@ -15,15 +15,15 @@
         android:text="ALLERGEN ALERT"
         android:textAppearance="@style/TextAppearance.AppCompat.Display2"
         android:textColor="@android:color/white"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="32dp"
         app:layout_constraintBottom_toBottomOf="@+id/foodImageView"
         android:layout_marginBottom="8dp"
-        app:layout_constraintVertical_bias="0.16"
+        app:layout_constraintVertical_bias="0.0"
         android:layout_marginLeft="8dp"
         app:layout_constraintLeft_toLeftOf="parent"
         android:layout_marginRight="8dp"
-        app:layout_constraintRight_toRightOf="parent"/>
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/alertImageView"/>
 
     <TextView
         android:id="@+id/alertText"
@@ -40,6 +40,20 @@
         app:layout_constraintHorizontal_bias="1.0"/>
 
     <ImageView
+        android:id="@+id/alertImageView"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="32dp"
+        android:scaleType="fitXY"
+        android:src="@android:drawable/ic_dialog_alert"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@android:drawable/ic_dialog_alert"/>
+
+    <ImageView
         android:id="@+id/foodImageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -53,4 +67,5 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/menu_ad"/>
+
 </android.support.constraint.ConstraintLayout>

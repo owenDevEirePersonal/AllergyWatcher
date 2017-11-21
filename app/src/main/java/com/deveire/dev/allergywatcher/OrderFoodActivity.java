@@ -62,7 +62,9 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     private SharedPreferences savedData;
 
     private ImageView foodImage;
+    private ImageView alertImage;
     private TextView alertText;
+    private TextView alertBigText;
 
     private boolean hasState;
 
@@ -77,6 +79,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
     private String[] currentOrderedFoodAllergies;
     private int currentOrderedFoodSalt;
+    private String currentOrderedFoodDinnerSuggestion;
 
 
     private TextToSpeech toSpeech;
@@ -87,6 +90,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     private final String textToSpeechID_Nothing = "Nothing";
     private final String textToSpeechID_Clarification = "Clarification";
     private final String textToSpeechID_Allergy = "Allergy";
+    private final String textToSpeechID_Suggestion = "Suggestion";
+    private final String textToSpeechID_OrderDespiteSalt = "OrderWithSalt";
 
 
     private SpeechRecognizer recog;
@@ -96,6 +101,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     private final int pingingRecogFor_Order = 1;
     private final int pingingRecogFor_Confirmation = 2;
     private final int pingingRecogFor_Clarification = 3;
+    private final int pingingRecogFor_Suggestion = 4;
+    private final int pingingRecogFor_OrderDespiteSalt = 5;
     private final int pingingRecogFor_Nothing = -1;
 
     private String[] currentPossiblePhrasesNeedingClarification;
@@ -205,7 +212,9 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
 
         foodImage = (ImageView) findViewById(R.id.foodImageView);
+        alertImage = (ImageView) findViewById(R.id.alertImageView);
         alertText = (TextView) findViewById(R.id.alertText);
+        alertBigText = (TextView) findViewById(R.id.alertBigText);
 
         resetImageTimer = new Timer("ResetImageTimer");
         resetImageTimerTask = new TimerTask()
@@ -293,6 +302,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     case textToSpeechID_Order: recog.startListening(recogIntent); break;
                                     case textToSpeechID_Confirmation: recog.startListening(recogIntent); break;
                                     case textToSpeechID_Clarification: recog.startListening(recogIntent); break;
+                                    case textToSpeechID_Suggestion: recog.startListening(recogIntent); break;
+                                    case textToSpeechID_OrderDespiteSalt: recog.startListening(recogIntent); break;
                                     case textToSpeechID_Allergy:
                                         pingingRecogFor = pingingRecogFor_Order;
                                         recog.startListening(recogIntent);
@@ -512,7 +523,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     }
 
     //returns true if no allerigies found
-    private boolean runAllergyAndSaltCheck(String userUIDin, String[] currentFoodAllergens, int currentFoodSalt)
+    private boolean runAllergyCheck(String userUIDin, String[] currentFoodAllergens)
     {
         Log.i("Allergens", "Running Check on " + userUIDin);
         boolean userFound = false;
@@ -542,18 +553,43 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     {
                         Log.i("Allergens", "Allergy Match found: " + anAllergen + " : " + bAllergen);
                         foodImage.setVisibility(View.INVISIBLE);
+                        alertImage.setImageResource(R.drawable.allergyalerticon);
+                        alertBigText.setText("Allergen Alert");
                         alertText.setText("This item may contain " + anAllergen + ". Consuming it may cause an Allergic Reaction, please choose another item.");
                         speakAlert();
                         return false;
                     }
                 }
             }
+        }
+        return true;
+    }
 
+    private boolean runSaltCheck(String userUIDin, int currentFoodSalt)
+    {
+        Log.i("Salt", "Running Check on " + userUIDin);
+        boolean userFound = false;
+        int indexOfUser = 0;
+        for (String aUserID: savedUsersIDs)
+        {
+            if(aUserID.matches(userUIDin))
+            {
+                Log.i("Allergens", "User Found");
+                userFound = true;
+                break;
+            }
+            indexOfUser++;
+        }
+
+        if(userFound)
+        {
             if(currentFoodSalt + savedUserCurrentSalt.get(indexOfUser) > savedUserMaxSalt.get(indexOfUser))
             {
                 Log.i("Allergens", "Excessive Salt: " + currentFoodSalt + " : " + currentFoodSalt + savedUserCurrentSalt.get(indexOfUser) + " :of: " + savedUserMaxSalt.get(indexOfUser));
                 foodImage.setVisibility(View.INVISIBLE);
-                alertText.setText("Warning: This food contains more salt than your diet's salt budget will allow. Please order something else.");
+                alertImage.setImageResource(R.drawable.red_smiley);
+                alertBigText.setText("Diet Alert");
+                alertText.setText("Warning: This food contains more salt than your diet's salt budget will allow. Do you still wish to order this meal?");
                 speakDietAlert();
                 return false;
             }
@@ -574,7 +610,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
-            toSpeech.speak("Diet Alert!" + alertText.getText().toString(), TextToSpeech.QUEUE_ADD , null, textToSpeechID_Allergy);
+            pingingRecogFor = pingingRecogFor_OrderDespiteSalt;
+            toSpeech.speak("Diet Alert!" + alertText.getText().toString(), TextToSpeech.QUEUE_ADD , null, textToSpeechID_OrderDespiteSalt);
             //toSpeech.speak("", TextToSpeech.QUEUE_ADD , null, "End");
         }
     }
@@ -1038,9 +1075,9 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
                                     switch (response)
                                     {
-                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; break;
-                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; break;
-                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; break;
+                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; currentOrderedFoodDinnerSuggestion = ""; break;
+                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "Traditional Awlsmithing Owl Bear Fillets"; break;
+                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = " A mass of Salad."; break;
                                     }
                                 }
                                 break;
@@ -1059,20 +1096,31 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     {
                                         pingingRecogFor = pingingRecogFor_Nothing;
                                         //returns true if no allergies
-                                        if(runAllergyAndSaltCheck(currentUID, currentOrderedFoodAllergies, currentOrderedFoodSalt))
+                                        if(runAllergyCheck(currentUID, currentOrderedFoodAllergies))//if allergy found logic handled inside runAllergyCheck
                                         {
-                                            int indexOfUser = 0;
-                                            for (String aUserID: savedUsersIDs)
+                                            if(runSaltCheck(currentUID, currentOrderedFoodSalt))//if salt exceeds diet logic handled inside runSaltCheck
                                             {
-                                                if(aUserID.matches(currentUID))
+                                                int indexOfUser = 0;
+                                                for (String aUserID : savedUsersIDs)
                                                 {
-                                                    savedUserCurrentSalt.set(indexOfUser, currentOrderedFoodSalt + savedUserCurrentSalt.get(indexOfUser));
-                                                    break;
+                                                    if (aUserID.matches(currentUID))
+                                                    {
+                                                        savedUserCurrentSalt.set(indexOfUser, currentOrderedFoodSalt + savedUserCurrentSalt.get(indexOfUser));
+                                                        break;
+                                                    }
+                                                    indexOfUser++;
                                                 }
-                                                indexOfUser++;
+
+                                                toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
+
+                                                //Dinner Suggesting Code
+                                                if (!currentOrderedFoodDinnerSuggestion.matches(""))
+                                                {
+                                                    pingingRecogFor = pingingRecogFor_Suggestion;
+                                                    toSpeech.speak("We have a dinner suggestion for you. Would you like to hear it?", TextToSpeech.QUEUE_ADD, null, textToSpeechID_Suggestion);
+                                                }
                                             }
 
-                                            toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
                                         }
 
                                         foodImage.setImageResource(R.drawable.menu_ad);
@@ -1082,6 +1130,77 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                         pingingRecogFor = pingingRecogFor_Order;
                                         toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
                                         foodImage.setImageResource(R.drawable.menu_ad);
+                                    }
+                                }
+                            break;
+
+                            case pingingRecogFor_Suggestion:
+                                if(response.matches(""))
+                                {
+                                    Log.i("Recog", "Unrecongised response: " + response);
+                                    pingingRecogFor = pingingRecogFor_Confirmation;
+                                    toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Confirmation);
+                                }
+                                else
+                                {
+                                    Log.i("Recog", "Suggestion Confirmation Returned: " + response);
+                                    if(response.matches("Yes"))
+                                    {
+                                        pingingRecogFor = pingingRecogFor_Nothing;
+                                        //returns true if no allergies
+                                        toSpeech.speak("For Dinner we suggest . " + currentOrderedFoodDinnerSuggestion, TextToSpeech.QUEUE_FLUSH, null, "");
+                                    }
+                                    else if(response.matches("No"))
+                                    {
+                                        pingingRecogFor = pingingRecogFor_Order;
+                                        toSpeech.speak("Ok", TextToSpeech.QUEUE_FLUSH, null, "");
+                                    }
+                                }
+                                break;
+
+                            case pingingRecogFor_OrderDespiteSalt:
+                                if(response.matches(""))
+                                {
+                                    Log.i("Recog", "Unrecongised response: " + response);
+                                    pingingRecogFor = pingingRecogFor_Confirmation;
+                                    toSpeech.speak("Can you please repeat that?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Confirmation);
+                                }
+                                else
+                                {
+                                    Log.i("Recog", "Confirmation Returned: " + response);
+                                    if(response.matches("Yes"))
+                                    {
+                                        pingingRecogFor = pingingRecogFor_Nothing;
+                                        //returns true if no allergies
+
+                                        int indexOfUser = 0;
+                                        for (String aUserID : savedUsersIDs)
+                                        {
+                                            if (aUserID.matches(currentUID))
+                                            {
+                                                savedUserCurrentSalt.set(indexOfUser, currentOrderedFoodSalt + savedUserCurrentSalt.get(indexOfUser));
+                                                break;
+                                            }
+                                            indexOfUser++;
+                                        }
+
+                                        toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
+                                        if (!currentOrderedFoodDinnerSuggestion.matches(""))
+                                        {
+                                            pingingRecogFor = pingingRecogFor_Suggestion;
+                                            toSpeech.speak("We have a dinner suggestion for you. Would you like to hear it?", TextToSpeech.QUEUE_ADD, null, textToSpeechID_Suggestion);
+                                        }
+
+
+                                        foodImage.setImageResource(R.drawable.menu_ad);
+                                        foodImage.setVisibility(View.VISIBLE);
+                                    }
+                                    else if(response.matches("No"))
+                                    {
+                                        pingingRecogFor = pingingRecogFor_Order;
+                                        toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
+                                        foodImage.setImageResource(R.drawable.menu_ad);
+                                        foodImage.setVisibility(View.VISIBLE);
                                     }
                                 }
                                 break;
@@ -1097,6 +1216,18 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
                 case pingingRecogFor_Confirmation:
                     previousPingingRecogFor = pingingRecogFor_Confirmation;
+                    phrases = new String[]{"Yes", "No"};
+                    sortThroughRecognizerResultsForAllPossiblities(matches, phrases);
+                    break;
+
+                case pingingRecogFor_Suggestion:
+                    previousPingingRecogFor = pingingRecogFor_Suggestion;
+                    phrases = new String[]{"Yes", "No"};
+                    sortThroughRecognizerResultsForAllPossiblities(matches, phrases);
+                    break;
+
+                case pingingRecogFor_OrderDespiteSalt:
+                    previousPingingRecogFor = pingingRecogFor_OrderDespiteSalt;
                     phrases = new String[]{"Yes", "No"};
                     sortThroughRecognizerResultsForAllPossiblities(matches, phrases);
                     break;
