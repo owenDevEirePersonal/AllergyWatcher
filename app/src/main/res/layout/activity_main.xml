@@ -13,18 +13,15 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginTop="8dp"
         android:background="@drawable/rounded_button"
         android:text="Card Setup"
         android:textColor="@color/cast_expanded_controller_text_color"
         map:layout_constraintBottom_toBottomOf="parent"
-        map:layout_constraintHorizontal_bias="1.0"
-        map:layout_constraintLeft_toRightOf="@+id/driverButton"
         map:layout_constraintRight_toRightOf="parent"
         map:layout_constraintTop_toTopOf="parent"
-        map:layout_constraintVertical_bias="0.523"/>
+        map:layout_constraintVertical_bias="0.0"/>
 
     <Button
         android:id="@+id/driverButton"
@@ -36,6 +33,7 @@
         android:background="@drawable/rounded_button"
         android:text="Canteen"
         android:textColor="@color/cast_expanded_controller_text_color"
+        android:visibility="gone"
         map:layout_constraintBottom_toBottomOf="parent"
         map:layout_constraintLeft_toLeftOf="parent"
         map:layout_constraintTop_toTopOf="parent"
@@ -43,16 +41,15 @@
 
     <Button
         android:id="@+id/orderButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginBottom="8dp"
         android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
         android:background="@drawable/rounded_button"
         android:text="Order"
         android:textColor="@color/cast_expanded_controller_text_color"
         map:layout_constraintBottom_toBottomOf="parent"
-        map:layout_constraintHorizontal_bias="0.506"
         map:layout_constraintLeft_toRightOf="@+id/driverButton"
-        map:layout_constraintRight_toLeftOf="@+id/managerButton"/>
+        map:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="8dp"/>
 </android.support.constraint.ConstraintLayout>

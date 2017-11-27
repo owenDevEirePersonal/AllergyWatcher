@@ -1076,8 +1076,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     switch (response)
                                     {
                                         case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; currentOrderedFoodDinnerSuggestion = ""; break;
-                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "Traditional Awlsmithing Owl Bear Fillets"; break;
-                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = " A mass of Salad."; break;
+                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "Pasta"; break;
+                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = "Tuna Salad"; break;
                                     }
                                 }
                                 break;
@@ -1148,7 +1148,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     {
                                         pingingRecogFor = pingingRecogFor_Nothing;
                                         //returns true if no allergies
-                                        toSpeech.speak("For Dinner we suggest . " + currentOrderedFoodDinnerSuggestion, TextToSpeech.QUEUE_FLUSH, null, "");
+                                        toSpeech.speak("For Dinner we suggest . " + currentOrderedFoodDinnerSuggestion + ". Would you like to order it? ", TextToSpeech.QUEUE_FLUSH, null, "");
                                     }
                                     else if(response.matches("No"))
                                     {
