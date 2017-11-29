@@ -45,6 +45,7 @@ public class SetupPatronActivity extends AppCompatActivity
     private ArrayList<String> savedUserAllergies;
     private ArrayList<Integer> savedUserMaxSalt;
     private ArrayList<Integer> savedUserCurrentSalt;
+    private ArrayList<Boolean> savedUserIsNearSighted;
     private ArrayList<String> currentUserAllergies;
 
 
@@ -57,6 +58,7 @@ public class SetupPatronActivity extends AppCompatActivity
     private EditText patronMaxSaltEditText;
     private Button cancelButton;
     private Button okButton;
+    private CheckBox nearSightedCheckbox;
     private ArrayList<CheckBox> allergenRadioButtons;
 
 
@@ -120,7 +122,7 @@ public class SetupPatronActivity extends AppCompatActivity
         allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox6));
         allergenRadioButtons.add((CheckBox)findViewById(R.id.checkBox7));
 
-
+        nearSightedCheckbox = (CheckBox) findViewById(R.id.nearSightedCheckbox);
 
 
 
@@ -213,6 +215,7 @@ public class SetupPatronActivity extends AppCompatActivity
             edit.putInt("savedUserMaxSalt" + i, savedUserMaxSalt.get(i));
             Log.i("Salt", "Salt for " + i + ": " + savedUserMaxSalt.get(i));
             edit.putInt("savedUserCurrentSalt" + i, savedUserCurrentSalt.get(i));
+            edit.putBoolean("savedUserIsNearSighted" + i, savedUserIsNearSighted.get(i));
         }
 
         saveLastUsedDetails(edit);
@@ -230,6 +233,7 @@ public class SetupPatronActivity extends AppCompatActivity
         savedUsersIDs = new ArrayList<String>();
         savedUserMaxSalt = new ArrayList<Integer>();
         savedUserCurrentSalt = new ArrayList<Integer>();
+        savedUserIsNearSighted = new ArrayList<Boolean>();
         savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
 
         for(int i = 0; i < savedTotalNumberOfUsers; i++)
@@ -238,6 +242,7 @@ public class SetupPatronActivity extends AppCompatActivity
             savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
             savedUserMaxSalt.add(savedData.getInt("savedUserMaxSalt" + i, 0));
             savedUserCurrentSalt.add(savedData.getInt("savedUserCurrentSalt" + i, 0));
+            savedUserIsNearSighted.add(savedData.getBoolean("savedUserIsNearSighted" + i, false));
         }
     }
 
@@ -277,6 +282,8 @@ public class SetupPatronActivity extends AppCompatActivity
                     Log.i("Salt", "Saving Salt: " + patronMaxSaltEditText.getText().toString() + " : " + i + " : " + Integer.parseInt(patronMaxSaltEditText.getText().toString()));
                     savedUserCurrentSalt.set(i, 0);
 
+                    savedUserIsNearSighted.set(i, nearSightedCheckbox.isChecked());
+
 
                     matchFound = true;
                     break;
@@ -312,6 +319,8 @@ public class SetupPatronActivity extends AppCompatActivity
                 savedUserMaxSalt.add(Integer.parseInt(patronMaxSaltEditText.getText().toString()));
                 Log.i("Salt", "Adding Salt: " + patronMaxSaltEditText.getText().toString() + " : " + Integer.parseInt(patronMaxSaltEditText.getText().toString()));
                 savedUserCurrentSalt.add(0);
+
+                savedUserIsNearSighted.add(nearSightedCheckbox.isChecked());
 
             }
         }
@@ -507,6 +516,7 @@ public class SetupPatronActivity extends AppCompatActivity
                                     }
                                 }
                             }
+                            nearSightedCheckbox.setChecked(savedUserIsNearSighted.get(j));
                             patronMaxSaltEditText.setText("" + savedUserMaxSalt.get(j));
                         }
                         else

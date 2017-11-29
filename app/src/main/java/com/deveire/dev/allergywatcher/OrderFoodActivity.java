@@ -76,10 +76,12 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     private ArrayList<String> savedUserAllergies;
     private ArrayList<Integer> savedUserMaxSalt;
     private ArrayList<Integer> savedUserCurrentSalt;
+    private ArrayList<Boolean> savedUserIsNearSighted;
 
     private String[] currentOrderedFoodAllergies;
     private int currentOrderedFoodSalt;
     private String currentOrderedFoodDinnerSuggestion;
+    private String currentOrderedFoodTextDescription;
 
 
     private TextToSpeech toSpeech;
@@ -511,6 +513,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         savedUsersIDs = new ArrayList<String>();
         savedUserMaxSalt = new ArrayList<Integer>();
         savedUserCurrentSalt = new ArrayList<Integer>();
+        savedUserIsNearSighted = new ArrayList<Boolean>();
         savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
 
         for(int i = 0; i < savedTotalNumberOfUsers; i++)
@@ -519,6 +522,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
             savedUserAllergies.add(savedData.getString("savedUserAllergies" + i, "Error"));
             savedUserMaxSalt.add(savedData.getInt("savedUserMaxSalt" + i, 0));
             savedUserCurrentSalt.add(savedData.getInt("savedUserCurrentSalt" + i, 0));
+            savedUserIsNearSighted.add(savedData.getBoolean("savedUserIsNearSighted" + i, false));
         }
     }
 
@@ -593,6 +597,39 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                 speakDietAlert();
                 return false;
             }
+        }
+        return true;
+    }
+
+    private boolean runNearSightedCheck(String userUIDin)
+    {
+        Log.i("Salt", "Running Check on " + userUIDin);
+        boolean userFound = false;
+        int indexOfUser = 0;
+        for (String aUserID: savedUsersIDs)
+        {
+            if(aUserID.matches(userUIDin))
+            {
+                Log.i("Allergens", "NearSighedCheck User Found");
+                userFound = true;
+                break;
+            }
+            indexOfUser++;
+        }
+
+        if(userFound)
+        {
+            if(savedUserIsNearSighted.get(indexOfUser))
+            {
+                Log.i("Allergens", "User is nearsighted, displying text description: " + currentOrderedFoodTextDescription);
+                foodImage.setVisibility(View.INVISIBLE);
+                alertImage.setImageResource(R.drawable.infoicon);
+                alertBigText.setText(currentOrderedFoodTextDescription);
+                alertText.setText("");
+
+                return false;
+            }
+            Log.i("Allergens", "User is not nearsighted");
         }
         return true;
     }
@@ -1063,9 +1100,16 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                 }
                                 else if(response.matches("what's on the menu"))
                                 {
-                                    Log.i("Recog", "Unrecongised response: " + response);
+                                    Log.i("Recog", "Alternate response: " + response);
                                     pingingRecogFor = pingingRecogFor_Order;
                                     toSpeech.speak("Today's Menu includes: Beef Burgundy; Pan Fried Chicken; Veggie Burger. Which would you like?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
+                                }
+                                else if(response.matches("no") || response.matches("cancel"))
+                                {
+                                    Log.i("Recog", "Alternate response: " + response);
+                                    toSpeech.speak("Canceling Order", TextToSpeech.QUEUE_FLUSH, null, null);
+                                    foodImage.setImageResource(R.drawable.menu_ad);
+                                    foodImage.setVisibility(View.VISIBLE);
                                 }
                                 else
                                 {
@@ -1075,9 +1119,15 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
                                     switch (response)
                                     {
-                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; currentOrderedFoodDinnerSuggestion = ""; break;
-                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "Pasta"; break;
-                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = "Tuna Salad"; break;
+                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; currentOrderedFoodDinnerSuggestion = "";
+                                            currentOrderedFoodTextDescription = "Beef Burgundy served with pickling onions, button mushrooms, mashed potatoes and green beans.\n\n Allergens: Mushrooms."; runNearSightedCheck(currentUID);
+                                            break;
+                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "Pasta";
+                                            currentOrderedFoodTextDescription = "Veggie Burger served with tomatoes and lettuce. \n\n Allergens: Eggs, Sesame Seed, Mushrooms."; runNearSightedCheck(currentUID);
+                                            break;
+                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = "Tuna Salad";
+                                            currentOrderedFoodTextDescription = "Pan fried chicken in peanut oil, coated in sesame seeds to give it a good crunch. Served with a side dish of celery and carrots. \n\n Allergens: Peanut Oil, Celery.ro"; runNearSightedCheck(currentUID);
+                                            break;
                                     }
                                 }
                                 break;
@@ -1096,10 +1146,11 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     {
                                         pingingRecogFor = pingingRecogFor_Nothing;
                                         //returns true if no allergies
-                                        if(runAllergyCheck(currentUID, currentOrderedFoodAllergies))//if allergy found logic handled inside runAllergyCheck
+                                        if(runAllergyCheck(currentUID, currentOrderedFoodAllergies))//allergy found logic handled inside runAllergyCheck
                                         {
-                                            if(runSaltCheck(currentUID, currentOrderedFoodSalt))//if salt exceeds diet logic handled inside runSaltCheck
+                                            if(runSaltCheck(currentUID, currentOrderedFoodSalt))//salt exceeds diet logic handled inside runSaltCheck
                                             {
+
                                                 int indexOfUser = 0;
                                                 for (String aUserID : savedUsersIDs)
                                                 {
@@ -1112,6 +1163,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                                 }
 
                                                 toSpeech.speak("Order Confirmed.", TextToSpeech.QUEUE_FLUSH, null, null);
+                                                foodImage.setVisibility(View.VISIBLE);
 
                                                 //Dinner Suggesting Code
                                                 if (!currentOrderedFoodDinnerSuggestion.matches(""))
@@ -1130,6 +1182,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                         pingingRecogFor = pingingRecogFor_Order;
                                         toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
                                         foodImage.setImageResource(R.drawable.menu_ad);
+                                        foodImage.setVisibility(View.VISIBLE);
                                     }
                                 }
                             break;
@@ -1210,7 +1263,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
                 case pingingRecogFor_Order:
                     previousPingingRecogFor = pingingRecogFor_Order;
-                    phrases = new String[]{"veggie burger", "beef burgundy", "pan fried chicken", "what's on the menu"};
+                    phrases = new String[]{"veggie burger", "beef burgundy", "pan fried chicken", "what's on the menu", "no", "cancel"};
                     sortThroughRecognizerResultsForAllPossiblities(matches, phrases);
                     break;
 
