@@ -77,6 +77,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     private ArrayList<Integer> savedUserMaxSalt;
     private ArrayList<Integer> savedUserCurrentSalt;
     private ArrayList<Boolean> savedUserIsNearSighted;
+    private ArrayList<Boolean> savedUserWantsSuggestions;
 
     private String[] currentOrderedFoodAllergies;
     private int currentOrderedFoodSalt;
@@ -514,6 +515,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
         savedUserMaxSalt = new ArrayList<Integer>();
         savedUserCurrentSalt = new ArrayList<Integer>();
         savedUserIsNearSighted = new ArrayList<Boolean>();
+        savedUserWantsSuggestions = new ArrayList<Boolean>();
         savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
 
         for(int i = 0; i < savedTotalNumberOfUsers; i++)
@@ -523,6 +525,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
             savedUserMaxSalt.add(savedData.getInt("savedUserMaxSalt" + i, 0));
             savedUserCurrentSalt.add(savedData.getInt("savedUserCurrentSalt" + i, 0));
             savedUserIsNearSighted.add(savedData.getBoolean("savedUserIsNearSighted" + i, false));
+            savedUserWantsSuggestions.add(savedData.getBoolean("savedUserWantsSuggestions" + i, false));
         }
     }
 
@@ -1122,11 +1125,11 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                         case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; currentOrderedFoodDinnerSuggestion = "";
                                             currentOrderedFoodTextDescription = "Beef Burgundy served with pickling onions, button mushrooms, mashed potatoes and green beans.\n\n Allergens: Mushrooms."; runNearSightedCheck(currentUID);
                                             break;
-                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "Pasta";
+                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "An email has been sent to you with the details.";
                                             currentOrderedFoodTextDescription = "Veggie Burger served with tomatoes and lettuce. \n\n Allergens: Eggs, Sesame Seed, Mushrooms."; runNearSightedCheck(currentUID);
                                             break;
-                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = "Tuna Salad";
-                                            currentOrderedFoodTextDescription = "Pan fried chicken in peanut oil, coated in sesame seeds to give it a good crunch. Served with a side dish of celery and carrots. \n\n Allergens: Peanut Oil, Celery.ro"; runNearSightedCheck(currentUID);
+                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = "An email has been sent to you with the details.";
+                                            currentOrderedFoodTextDescription = "Pan fried chicken in peanut oil, coated in sesame seeds to give it a good crunch. Served with a side dish of celery and carrots. \n\n Allergens: Peanut Oil, Celery, Sesame Seeds."; runNearSightedCheck(currentUID);
                                             break;
                                     }
                                 }
@@ -1166,10 +1169,10 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                                 foodImage.setVisibility(View.VISIBLE);
 
                                                 //Dinner Suggesting Code
-                                                if (!currentOrderedFoodDinnerSuggestion.matches(""))
+                                                if (!currentOrderedFoodDinnerSuggestion.matches("") && savedUserWantsSuggestions.get(indexOfUser))
                                                 {
                                                     pingingRecogFor = pingingRecogFor_Suggestion;
-                                                    toSpeech.speak("We have a dinner suggestion for you. Would you like to hear it?", TextToSpeech.QUEUE_ADD, null, textToSpeechID_Suggestion);
+                                                    toSpeech.speak("This meal comes with a suggested dinner for tonight. Would you like to order it?", TextToSpeech.QUEUE_ADD, null, textToSpeechID_Suggestion);
                                                 }
                                             }
 
@@ -1201,7 +1204,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     {
                                         pingingRecogFor = pingingRecogFor_Nothing;
                                         //returns true if no allergies
-                                        toSpeech.speak("For Dinner we suggest . " + currentOrderedFoodDinnerSuggestion + ". Would you like to order it? ", TextToSpeech.QUEUE_FLUSH, null, "");
+                                        toSpeech.speak(/*"For Dinner we suggest . " +*/ currentOrderedFoodDinnerSuggestion /*+ ". Would you like to order it? "*/, TextToSpeech.QUEUE_FLUSH, null, "");
                                     }
                                     else if(response.matches("No"))
                                     {
@@ -2169,6 +2172,8 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
 
 /*
+
+
 
 
 
