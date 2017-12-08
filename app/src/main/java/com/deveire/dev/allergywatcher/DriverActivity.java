@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -81,6 +82,8 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
     private ArrayList<String> currentFoodAllergens;
 
     private int foodIndex;
+
+    private Timer orderDoneTimer;
 
     //[BLE Variables]
     private String storedScannerAddress;
@@ -245,6 +248,9 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
         foodIndex = 1;
         cycleFood();
 
+        orderDoneTimer = new Timer();
+
+
         savedData = this.getApplicationContext().getSharedPreferences("AllergyWatcher SavedData", Context.MODE_PRIVATE);
         savedTotalNumberOfUsers = savedData.getInt("savedTotal", 0);
         for(int i = 0; i < savedTotalNumberOfUsers; i++)
@@ -385,6 +391,9 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
 
         tileReaderTimer.cancel();
         tileReaderTimer.purge();
+
+        orderDoneTimer.cancel();
+        orderDoneTimer.purge();
 
 
         //if scanner is connected, disconnect it
@@ -536,17 +545,17 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
         currentFoodAllergens = new ArrayList<String>();
         switch (foodIndex)
         {
-            case 1: foodImage.setImageResource(R.drawable.beefburgany);
+            case 1: foodImage.setImageResource(R.drawable.meal1);
                 foodNameText.setText("Meal 1");
                 currentFoodAllergens.add("Mushrooms");
                 break;
-            case 2: foodImage.setImageResource(R.drawable.chicken);
+            case 2: foodImage.setImageResource(R.drawable.meal2);
                 foodNameText.setText("Meal 2");
                 currentFoodAllergens.add("Peanuts");
                 currentFoodAllergens.add("Celery");
                 currentFoodAllergens.add("Sesame Seeds");
                 break;
-            case 3: foodImage.setImageResource(R.drawable.veggie_burger);
+            case 3: foodImage.setImageResource(R.drawable.vegitarian);
                 foodNameText.setText("Meal 3");
                 currentFoodAllergens.add("Eggs");
                 currentFoodAllergens.add("Mushrooms");
@@ -812,8 +821,41 @@ public class DriverActivity extends FragmentActivity implements DownloadCallback
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
                         {
                             toSpeech.speak("Placing Order", TextToSpeech.QUEUE_FLUSH, null, "");
+
+                            try
+                            {
+                                foodImage.setImageResource(R.drawable.order_complete);
+
+                                orderDoneTimer.schedule(new TimerTask()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        runOnUiThread(new Runnable()
+                                        {
+                                            @Override
+                                            public void run()
+                                            {
+                                                switch (foodIndex)
+                                                {
+                                                    case 2: foodImage.setImageResource(R.drawable.meal1); break;
+                                                    case 3: foodImage.setImageResource(R.drawable.meal2); break;
+                                                    case 1: foodImage.setImageResource(R.drawable.vegitarian); break;
+                                                }
+                                            }
+                                        });
+
+
+                                    }
+                                }, 10000);
+
+                            } catch (Exception e)
+                            {
+                                e.printStackTrace();
+                            }
+
                         }
-                        runAllergyCheck(currentUID);
+                        //runAllergyCheck(currentUID);
                     }
                 });
             }

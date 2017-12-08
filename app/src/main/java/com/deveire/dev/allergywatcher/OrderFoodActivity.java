@@ -225,7 +225,15 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
             @Override
             public void run()
             {
-                foodImage.setImageResource(R.drawable.menu_ad);
+                runOnUiThread(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        foodImage.setImageResource(R.drawable.new_menu_ipad);
+                    }
+                });
+
             }
         };
 
@@ -414,6 +422,9 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
         tileReaderTimer.cancel();
         tileReaderTimer.purge();
+
+        resetImageTimer.cancel();
+        resetImageTimer.purge();
 
 
         //if scanner is connected, disconnect it
@@ -821,7 +832,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     {
                         toSpeech.speak("No Response Detected, aborting order.", TextToSpeech.QUEUE_FLUSH, null, null);
                     }
-                    foodImage.setImageResource(R.drawable.menu_ad);
+                    foodImage.setImageResource(R.drawable.new_menu_ipad);
                     foodImage.setVisibility(View.VISIBLE);
                     break;
             case SpeechRecognizer.ERROR_NETWORK_TIMEOUT: Log.e("Recog", "NETWORK TIMEOUT ERROR"); break;
@@ -1111,7 +1122,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                 {
                                     Log.i("Recog", "Alternate response: " + response);
                                     toSpeech.speak("Canceling Order", TextToSpeech.QUEUE_FLUSH, null, null);
-                                    foodImage.setImageResource(R.drawable.menu_ad);
+                                    foodImage.setImageResource(R.drawable.new_menu_ipad);
                                     foodImage.setVisibility(View.VISIBLE);
                                 }
                                 else
@@ -1122,14 +1133,14 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
 
                                     switch (response)
                                     {
-                                        case "beef burgundy": foodImage.setImageResource(R.drawable.beefburgany2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; currentOrderedFoodDinnerSuggestion = "";
+                                        case "beef burgundy": foodImage.setImageResource(R.drawable.meal1); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Mushrooms"}; currentOrderedFoodSalt = 50; currentOrderedFoodDinnerSuggestion = "An email has been sent to you with the details.";
                                             currentOrderedFoodTextDescription = "Beef Burgundy served with pickling onions, button mushrooms, mashed potatoes and green beans.\n\n Allergens: Mushrooms."; runNearSightedCheck(currentUID);
                                             break;
-                                        case "veggie burger": foodImage.setImageResource(R.drawable.veggie_burger_2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "An email has been sent to you with the details.";
-                                            currentOrderedFoodTextDescription = "Veggie Burger served with tomatoes and lettuce. \n\n Allergens: Eggs, Sesame Seed, Mushrooms."; runNearSightedCheck(currentUID);
-                                            break;
-                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.chicken2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = "An email has been sent to you with the details.";
+                                        case "pan fried chicken": foodImage.setImageResource(R.drawable.meal2); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Peanuts", "Celery", "Sesame Seeds"}; currentOrderedFoodSalt = 150; currentOrderedFoodDinnerSuggestion = "An email has been sent to you with the details.";
                                             currentOrderedFoodTextDescription = "Pan fried chicken in peanut oil, coated in sesame seeds to give it a good crunch. Served with a side dish of celery and carrots. \n\n Allergens: Peanut Oil, Celery, Sesame Seeds."; runNearSightedCheck(currentUID);
+                                            break;
+                                        case "veggie burger": foodImage.setImageResource(R.drawable.vegitarian); foodImage.setVisibility(View.VISIBLE); currentOrderedFoodAllergies = new String[]{"Eggs", "Mushrooms"}; currentOrderedFoodSalt = 20; currentOrderedFoodDinnerSuggestion = "An email has been sent to you with the details.";
+                                            currentOrderedFoodTextDescription = "Veggie Burger served with tomatoes and lettuce. \n\n Allergens: Eggs, Sesame Seed, Mushrooms."; runNearSightedCheck(currentUID);
                                             break;
                                     }
                                 }
@@ -1174,17 +1185,26 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                                     pingingRecogFor = pingingRecogFor_Suggestion;
                                                     toSpeech.speak("This meal comes with a suggested dinner for tonight. Would you like to order it?", TextToSpeech.QUEUE_ADD, null, textToSpeechID_Suggestion);
                                                 }
+                                                foodImage.setImageResource(R.drawable.order_complete);
+                                                resetImageTimer.schedule(resetImageTimerTask, 10000);
                                             }
-
+                                            else
+                                            {
+                                                foodImage.setImageResource(R.drawable.new_menu_ipad);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            foodImage.setImageResource(R.drawable.new_menu_ipad);
                                         }
 
-                                        foodImage.setImageResource(R.drawable.menu_ad);
+
                                     }
                                     else if(response.matches("No"))
                                     {
                                         pingingRecogFor = pingingRecogFor_Order;
                                         toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
-                                        foodImage.setImageResource(R.drawable.menu_ad);
+                                        foodImage.setImageResource(R.drawable.new_menu_ipad);
                                         foodImage.setVisibility(View.VISIBLE);
                                     }
                                 }
@@ -1248,14 +1268,15 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                         }
 
 
-                                        foodImage.setImageResource(R.drawable.menu_ad);
+                                        foodImage.setImageResource(R.drawable.order_complete);
+                                        resetImageTimer.schedule(resetImageTimerTask, 10000);
                                         foodImage.setVisibility(View.VISIBLE);
                                     }
                                     else if(response.matches("No"))
                                     {
                                         pingingRecogFor = pingingRecogFor_Order;
                                         toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
-                                        foodImage.setImageResource(R.drawable.menu_ad);
+                                        foodImage.setImageResource(R.drawable.new_menu_ipad);
                                         foodImage.setVisibility(View.VISIBLE);
                                     }
                                 }
