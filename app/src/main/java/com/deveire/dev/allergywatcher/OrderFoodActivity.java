@@ -47,6 +47,7 @@ import org.json.JSONException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -230,7 +231,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     @Override
                     public void run()
                     {
-                        foodImage.setImageResource(R.drawable.new_menu_ipad);
+                        foodImage.setImageResource(R.drawable.menu_ad);
                     }
                 });
 
@@ -832,7 +833,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                     {
                         toSpeech.speak("No Response Detected, aborting order.", TextToSpeech.QUEUE_FLUSH, null, null);
                     }
-                    foodImage.setImageResource(R.drawable.new_menu_ipad);
+                    foodImage.setImageResource(R.drawable.menu_ad);
                     foodImage.setVisibility(View.VISIBLE);
                     break;
             case SpeechRecognizer.ERROR_NETWORK_TIMEOUT: Log.e("Recog", "NETWORK TIMEOUT ERROR"); break;
@@ -1122,7 +1123,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                 {
                                     Log.i("Recog", "Alternate response: " + response);
                                     toSpeech.speak("Canceling Order", TextToSpeech.QUEUE_FLUSH, null, null);
-                                    foodImage.setImageResource(R.drawable.new_menu_ipad);
+                                    foodImage.setImageResource(R.drawable.menu_ad);
                                     foodImage.setVisibility(View.VISIBLE);
                                 }
                                 else
@@ -1190,12 +1191,12 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                             }
                                             else
                                             {
-                                                foodImage.setImageResource(R.drawable.new_menu_ipad);
+                                                foodImage.setImageResource(R.drawable.menu_ad);
                                             }
                                         }
                                         else
                                         {
-                                            foodImage.setImageResource(R.drawable.new_menu_ipad);
+                                            foodImage.setImageResource(R.drawable.menu_ad);
                                         }
 
 
@@ -1204,7 +1205,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     {
                                         pingingRecogFor = pingingRecogFor_Order;
                                         toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
-                                        foodImage.setImageResource(R.drawable.new_menu_ipad);
+                                        foodImage.setImageResource(R.drawable.menu_ad);
                                         foodImage.setVisibility(View.VISIBLE);
                                     }
                                 }
@@ -1225,6 +1226,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                         pingingRecogFor = pingingRecogFor_Nothing;
                                         //returns true if no allergies
                                         toSpeech.speak(/*"For Dinner we suggest . " +*/ currentOrderedFoodDinnerSuggestion /*+ ". Would you like to order it? "*/, TextToSpeech.QUEUE_FLUSH, null, "");
+                                        sendEmail();
                                     }
                                     else if(response.matches("No"))
                                     {
@@ -1276,7 +1278,7 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
                                     {
                                         pingingRecogFor = pingingRecogFor_Order;
                                         toSpeech.speak("Order Canceled. What would you like to order instead?", TextToSpeech.QUEUE_FLUSH, null, textToSpeechID_Order);
-                                        foodImage.setImageResource(R.drawable.new_menu_ipad);
+                                        foodImage.setImageResource(R.drawable.menu_ad);
                                         foodImage.setVisibility(View.VISIBLE);
                                     }
                                 }
@@ -2187,14 +2189,27 @@ public class OrderFoodActivity extends AppCompatActivity implements DownloadCall
     }
 //**********[/Location Update and server pinging Code]
 
+    private void sendEmail()
+    {
+        //GMailSender sm = new GMailSender(this, "dan@deveire.com", "New Trouble Ticket", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+
+        SimpleDateFormat format = new SimpleDateFormat(" HH:mm  dd/MM/yyyy");
+        Calendar aCalendar = Calendar.getInstance();
+        Calendar bCalendar = Calendar.getInstance();
+        bCalendar.setTime(aCalendar.getTime());
+        bCalendar.add(Calendar.HOUR, 2);
+
+        GMailSender sm = new GMailSender(this, "dan@deveire.com", "Soxgo Dinner Suggestion", "For dinner today on" + format.format(aCalendar.getTime()) +  " we suggest the Caesar Salad. \n To order at this time and location, click below: \n\t Location: Dan's House \n\t Time: " + format.format(bCalendar.getTime()));
+        //Executing sendmail to send email
+        sm.execute();
+    }
+
 }
 
 
 
 
 /*
-
-
 
 
 
